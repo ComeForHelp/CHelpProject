@@ -35,6 +35,162 @@
 
 ComeForHelp
 
+## Стек и структура репозитория
+
+| Часть | Стек | Папка |
+|---|---|---|
+| Backend | NestJS · Prisma · PostgreSQL · JWT · Swagger · @nestjs/schedule | [`backend/`](backend/) |
+| Frontend | Next.js (App Router) · Mantine · TanStack Query · Zustand | `frontend/` (в работе) |
+| Документы | ER-диаграмма, жизненный цикл заявки, памятка для фронтенда | [`docs/`](docs/) |
+
+## Быстрый старт (Docker)
+
+```bash
+docker compose up -d --build
+docker compose exec backend npx prisma db seed     # районы, категории, тестовые пользователи
+```
+
+- API: http://localhost:3001/api/v1
+- Swagger (контракт для фронтенда): http://localhost:3001/api/docs
+- Типы TypeScript для фронтенда: `npx openapi-typescript http://localhost:3001/api/docs-json -o schema.d.ts`
+- **Фронтенду читать [docs/frontend-api.md](docs/frontend-api.md)** — токены, ошибки, даты, файлы, карта страниц → API
+
+Тестовые входы после seed (пароль `password123`):
+
+| Телефон | Роль |
+|---|---|
+| +79000000001 | администратор |
+| +79000000002 | координатор |
+| +79000000003 | получатель (Мария Петровна, есть адрес и заявки) |
+| +79000000004 | родственник (дочь, связь подтверждена) |
+| +79000000005 | волонтёр, проверен (Ленинский, Фрунзенский) |
+| +79000000006 | волонтёр на проверке |
+
+## Запуск backend без Docker
+
+Нужны Node.js 22 и PostgreSQL.
+
+```bash
+cd backend
+cp .env.example .env          # указать DATABASE_URL
+npm install
+npx prisma migrate deploy     # создать таблицы
+npm run prisma:seed
+npm run start:dev
+```
+
+| Команда | Что делает |
+|---|---|
+| `npm run start:dev` | сервер с перезапуском при изменениях |
+| `npm test` | модульные тесты (машина статусов, расписание, утилиты) |
+| `npm run test:e2e` | сквозной сценарий на реальной БД |
+| `npm run lint` | ESLint |
+| `npm run prisma:migrate` | новая миграция после правки `schema.prisma` |
+
+## Устройство backend
+
+Один модуль NestJS на предметную область; в каждом `*.module.ts`, `*.controller.ts`, `*.service.ts`, `dto/`.
+Все маршруты — с префиксом `/api/v1/<модуль>`.
+
+```
+backend/src/
+├── main.ts                 Swagger, CORS, ValidationPipe
+├── app.module.ts           глобальные guards, фильтр ошибок, Decimal → number
+├── config/                 чтение и проверка .env
+├── prisma/                 PrismaService
+├── common/
+│   ├── access/             AccessService — «чей это получатель / заявка»
+│   ├── decorators/         @Roles, @Public, @CurrentUser, @RequireVerifiedVolunteer
+│   ├── guards/             JwtAuthGuard → RolesGuard → TaskAccessGuard
+│   ├── filters/            единый формат ошибок
+│   ├── interceptors/       Decimal → number
+│   ├── dto/                пагинация
+│   └── utils/              телефоны, время Владивостока, поиск
+└── modules/
+    ├── auth/               регистрация, вход, refresh (ротация), выход
+    ├── users/              профиль, пароль, блокировка, сотрудники
+    ├── recipients/         профиль получателя, регистрация «за него»
+    ├── volunteers/         профиль, районы, верификация
+    ├── relatives/          запрос / приглашение / подтверждение связи
+    ├── addresses/          адреса с этажом, лифтом и подсказками
+    ├── dictionaries/       районы, категории
+    ├── tasks/              заявки, каталог, task-status.machine.ts
+    ├── task-items/         список покупок, отметки «куплено»
+    ├── recurring/          правила + cron-генерация и закрытие просроченных
+    ├── comments/           переписка в заявке
+    ├── attachments/        фото чеков и рецептов (локальная папка)
+    ├── reviews/            оценки, рейтинг волонтёра
+    ├── notifications/      уведомления внутри сайта
+    └── coordinator/        дашборд и метрики пилота
+```
+
+### Доступ
+
+1. **JwtAuthGuard** — access-токен; пользователь перечитывается из БД, поэтому блокировка действует сразу.
+2. **RolesGuard** — `@Roles(...)` и `@RequireVerifiedVolunteer()`. ADMIN проходит везде, где разрешён COORDINATOR.
+3. **TaskAccessGuard** — заявка «твоя»: ты получатель, его подтверждённый родственник, назначенный волонтёр
+   или координатор. Проверенный волонтёр видит открытые заявки из каталога в урезанном виде.
+
+До взятия заявки волонтёр видит район, улицу без дома, этаж и лифт, имя без фамилии. Телефоны,
+квартира, подсказки про вход (там бывает код домофона) и особенности получателя открываются только после «Взять».
+
+### Основные маршруты
+
+| Метод и путь | Кто | Что |
+|---|---|---|
+| `POST /auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout` | все | вход по телефону и паролю |
+| `GET /users/me` | все | мой профиль |
+| `GET /dictionaries/districts`, `/categories` | все | справочники |
+| `GET/POST/PATCH/DELETE /addresses` | получатель, родственник, координатор | адреса |
+| `POST /recipients` | родственник, координатор | регистрация получателя за него |
+| `GET /relatives/links`, `POST /relatives/links/request` · `/invite` · `/:id/confirm` | получатель, родственник | связи |
+| `POST /tasks` | получатель, родственник, координатор | создать заявку |
+| `GET /tasks/my?scope=active\|history` | получатель, родственник, волонтёр | мои заявки |
+| `GET /tasks/catalog` | проверенный волонтёр | открытые заявки, фильтры |
+| `GET /tasks` | координатор | таблица с фильтрами |
+| `GET /tasks/:id`, `/tasks/:id/history` | участники | карточка, журнал статусов |
+| `POST /tasks/:id/take` · `decline` · `start` · `done` | волонтёр | смена статуса |
+| `POST /tasks/:id/confirm` · `cancel` · `repeat` | получатель, родственник | смена статуса, повтор |
+| `POST /tasks/:id/assign` · `unassign` | координатор | назначение |
+| `/tasks/:taskId/items`, `/comments`, `/attachments`, `/reviews` | участники | содержимое заявки |
+| `GET/POST/PATCH/DELETE /recurring-rules` | получатель, родственник, координатор | регулярные поручения |
+| `GET /volunteers`, `POST /volunteers/:id/verify` | координатор | проверка волонтёров |
+| `GET /coordinator/dashboard`, `/coordinator/reports` | координатор | счётчики и метрики |
+| `GET /notifications`, `/notifications/unread-count` | все | уведомления |
+
+Полный контракт с примерами — в Swagger.
+
+### Ограничение частоты запросов
+
+| Лимит | Значение |
+|---|---|
+| весь API | 300 запросов в минуту с одного IP |
+| вход и регистрация | 30 в минуту с одного IP |
+| подбор пароля | 10 попыток в минуту на пару «IP + телефон» |
+
+Сверх лимита — 429 «Слишком много попыток». Лимита только по телефону нет намеренно: иначе можно было бы
+заблокировать вход пожилому человеку, перебирая пароли к его номеру. За Nginx нужно `TRUST_PROXY=1`,
+иначе все запросы будут считаться с одного IP прокси.
+
+### Фоновые задачи
+
+- **00:10 по Владивостоку** — заявки из регулярных правил на `RECURRING_HORIZON_DAYS` дней вперёд
+  (повторный запуск не создаёт дублей; при старте сервера генерация тоже выполняется).
+- **Каждые 10 минут** — невзятые заявки с прошедшим окном → `EXPIRED`.
+- Координатор может запустить обе вручную: `POST /recurring-rules/run`.
+
+### Ошибки
+
+Все ошибки приходят в одном формате:
+
+```json
+{ "statusCode": 409, "error": "CONFLICT", "message": "Нельзя перевести заявку из «Выполняется» в «Отменена»", "path": "/api/v1/tasks/…/cancel", "timestamp": "…" }
+```
+
+`message` — текст для показа пользователю (у ошибок валидации — массив строк).
+
 ## Разработка
 
 Правила работы с Git находятся в CONTRIBUTING.md.
+
+152-ФЗ: персональные данные граждан РФ храним на VPS в России; при регистрации фиксируется согласие `pd_consent_at`.
