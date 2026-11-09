@@ -1,0 +1,68 @@
+# Одна команда поднимает всё у каждого участника:
+#   docker compose up -d --build                     — PostgreSQL + backend
+#   docker compose --profile full up -d --build      — + frontend (когда появится папка frontend/)
+#   docker compose exec backend npx prisma db seed   — районы, категории, тестовые пользователи
+#
+# Swagger: http://localhost:3001/api/docs
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: idu
+      POSTGRES_PASSWORD: idu_password
+      POSTGRES_DB: idu_na_pomoshch
+      TZ: UTC
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U idu -d idu_na_pomoshch']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://idu:idu_password@postgres:5432/idu_na_pomoshch?schema=public
+      PORT: 3001
+      CORS_ORIGIN: http://localhost:3000
+      # В продакшене задать длинные случайные строки через .env рядом с docker-compose.yml
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-access-secret}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret}
+      JWT_ACCESS_TTL: 15m
+      JWT_REFRESH_TTL_DAYS: 30
+      APP_UTC_OFFSET_HOURS: 10
+      RECURRING_HORIZON_DAYS: 3
+      UPLOAD_DIR: /app/uploads
+      UPLOAD_MAX_MB: 10
+      CRON_ENABLED: 'true'
+      # За Nginx на VPS поставить 1
+      TRUST_PROXY: 0
+      THROTTLE_ENABLED: 'true'
+    ports:
+      - '3001:3001'
+    volumes:
+      - uploads:/app/uploads
+
+  frontend:
+    profiles: ['full']
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api/v1
+    ports:
+      - '3000:3000'
+
+volumes:
+  pgdata:
+  uploads:

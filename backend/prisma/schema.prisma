@@ -1,0 +1,443 @@
+// «Иду на помощь!» — схема БД MVP.
+// Единственный источник правды: миграции и типы TypeScript генерируются из этого файла.
+// Имена таблиц и колонок в БД — snake_case (как в ER-диаграмме), в коде — camelCase.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────────── Перечисления ─────────────────────────────
+
+enum Role {
+  RECIPIENT
+  RELATIVE
+  VOLUNTEER
+  COORDINATOR
+  ADMIN
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  BLOCKED
+}
+
+enum LinkStatus {
+  PENDING
+  CONFIRMED
+}
+
+enum ContactPreference {
+  CALL
+  MESSAGE
+}
+
+enum TaskStatus {
+  NEW
+  ASSIGNED
+  IN_PROGRESS
+  DONE
+  CONFIRMED
+  CANCELLED
+  EXPIRED
+}
+
+enum Urgency {
+  NORMAL
+  URGENT
+}
+
+enum PaymentMethod {
+  CASH_ON_DELIVERY
+  TRANSFER
+  PREPAID
+  NONE
+}
+
+enum Frequency {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+enum AttachmentKind {
+  RECEIPT
+  PRESCRIPTION
+  PHOTO
+}
+
+// ───────────────────────────── Пользователи ─────────────────────────────
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  role         Role
+  phone        String    @unique @db.VarChar(20)
+  email        String?   @unique @db.VarChar(255)
+  /// null — аккаунт создан координатором за человека без интернета, войти нельзя
+  passwordHash String?   @map("password_hash")
+  lastName     String    @map("last_name") @db.VarChar(100)
+  firstName    String    @map("first_name") @db.VarChar(100)
+  middleName   String?   @map("middle_name") @db.VarChar(100)
+  isActive     Boolean   @default(true) @map("is_active")
+  /// Согласие на обработку ПД (152-ФЗ) — обязательно для всех ролей
+  pdConsentAt  DateTime? @map("pd_consent_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  recipientProfile   RecipientProfile?
+  volunteerProfile   VolunteerProfile?  @relation("VolunteerProfileOwner")
+  verifiedVolunteers VolunteerProfile[] @relation("VolunteerVerifiedBy")
+
+  wardLinks     RelativeLink[] @relation("LinkRecipient")
+  relativeLinks RelativeLink[] @relation("LinkRelative")
+
+  refreshTokens RefreshToken[]
+  addresses     Address[]
+
+  tasksAsRecipient Task[] @relation("TaskRecipient")
+  tasksCreated     Task[] @relation("TaskCreatedBy")
+  tasksAsVolunteer Task[] @relation("TaskVolunteer")
+
+  rulesAsRecipient          RecurringRule[] @relation("RuleRecipient")
+  rulesCreated              RecurringRule[] @relation("RuleCreatedBy")
+  rulesAsPreferredVolunteer RecurringRule[] @relation("RulePreferredVolunteer")
+
+  statusChanges   TaskStatusHistory[]
+  comments        TaskComment[]
+  attachments     Attachment[]
+  reviewsWritten  Review[]            @relation("ReviewAuthor")
+  reviewsReceived Review[]            @relation("ReviewTarget")
+  notifications   Notification[]
+
+  @@index([role])
+  @@index([lastName, firstName])
+  @@map("users")
+}
+
+model RecipientProfile {
+  userId            String            @id @map("user_id") @db.Uuid
+  /// «хожу с тростью», «плохо слышу — звонить громко»
+  mobilityNotes     String?           @map("mobility_notes")
+  contactPreference ContactPreference @default(CALL) @map("contact_preference")
+  createdAt         DateTime          @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("recipient_profiles")
+}
+
+model VolunteerProfile {
+  userId             String             @id @map("user_id") @db.Uuid
+  verificationStatus VerificationStatus @default(PENDING) @map("verification_status")
+  verifiedById       String?            @map("verified_by_id") @db.Uuid
+  verifiedAt         DateTime?          @map("verified_at")
+  /// Причина отказа/блокировки — показывается волонтёру на /volunteer/pending
+  verificationNote   String?            @map("verification_note")
+  hasCar             Boolean            @default(false) @map("has_car")
+  about              String?
+  ratingAvg          Decimal            @default(0) @map("rating_avg") @db.Decimal(3, 2)
+  tasksDone          Int                @default(0) @map("tasks_done")
+  createdAt          DateTime           @default(now()) @map("created_at")
+
+  user       User                @relation("VolunteerProfileOwner", fields: [userId], references: [id], onDelete: Cascade)
+  verifiedBy User?               @relation("VolunteerVerifiedBy", fields: [verifiedById], references: [id], onDelete: SetNull)
+  districts  VolunteerDistrict[]
+
+  @@index([verificationStatus])
+  @@map("volunteer_profiles")
+}
+
+model VolunteerDistrict {
+  volunteerId String   @map("volunteer_id") @db.Uuid
+  districtId  Int      @map("district_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  volunteer VolunteerProfile @relation(fields: [volunteerId], references: [userId], onDelete: Cascade)
+  district  District         @relation(fields: [districtId], references: [id], onDelete: Restrict)
+
+  @@id([volunteerId, districtId])
+  @@map("volunteer_districts")
+}
+
+model RelativeLink {
+  id          String     @id @default(uuid()) @db.Uuid
+  recipientId String     @map("recipient_id") @db.Uuid
+  relativeId  String     @map("relative_id") @db.Uuid
+  /// «дочь», «сын», «соседка»
+  relation    String?    @db.VarChar(50)
+  status      LinkStatus @default(PENDING)
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  recipient User @relation("LinkRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  relative  User @relation("LinkRelative", fields: [relativeId], references: [id], onDelete: Cascade)
+
+  @@unique([recipientId, relativeId])
+  @@index([relativeId])
+  @@map("relative_links")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @map("token_hash") @db.VarChar(128)
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// ───────────────────────── Справочники и адреса ─────────────────────────
+
+model District {
+  id   Int    @id @default(autoincrement())
+  name String @unique @db.VarChar(100)
+
+  addresses          Address[]
+  volunteerDistricts VolunteerDistrict[]
+
+  @@map("districts")
+}
+
+model TaskCategory {
+  id         Int     @id @default(autoincrement())
+  code       String  @unique @db.VarChar(50)
+  name       String  @db.VarChar(100)
+  icon       String? @db.VarChar(50)
+  /// Нужны ли волонтёру свои деньги на покупку (фильтр каталога)
+  needsMoney Boolean @default(false) @map("needs_money")
+  sortOrder  Int     @default(0) @map("sort_order")
+
+  tasks          Task[]
+  recurringRules RecurringRule[]
+
+  @@map("task_categories")
+}
+
+model Address {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  /// «Дом», «Дача»
+  label       String?  @db.VarChar(50)
+  districtId  Int      @map("district_id")
+  street      String   @db.VarChar(200)
+  house       String   @db.VarChar(20)
+  apartment   String?  @db.VarChar(20)
+  entrance    String?  @db.VarChar(10)
+  floor       Int?
+  hasElevator Boolean  @default(false) @map("has_elevator")
+  /// Лестницы, крутой подъём, код домофона — рельеф Владивостока
+  accessNotes String?  @map("access_notes")
+  isDefault   Boolean  @default(false) @map("is_default")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  district       District        @relation(fields: [districtId], references: [id], onDelete: Restrict)
+  tasks          Task[]
+  recurringRules RecurringRule[]
+
+  @@index([userId])
+  @@map("addresses")
+}
+
+// ─────────────────────────── Заявки (поручения) ──────────────────────────
+
+model Task {
+  id              String        @id @default(uuid()) @db.Uuid
+  recipientId     String        @map("recipient_id") @db.Uuid
+  createdById     String        @map("created_by_id") @db.Uuid
+  volunteerId     String?       @map("volunteer_id") @db.Uuid
+  categoryId      Int           @map("category_id")
+  addressId       String        @map("address_id") @db.Uuid
+  recurringRuleId String?       @map("recurring_rule_id") @db.Uuid
+  title           String        @db.VarChar(200)
+  description     String?
+  /// Куда сопроводить (для категории «сопровождение»)
+  destination     String?       @db.VarChar(300)
+  status          TaskStatus    @default(NEW)
+  urgency         Urgency       @default(NORMAL)
+  windowStart     DateTime      @map("window_start")
+  windowEnd       DateTime      @map("window_end")
+  estimatedCost   Decimal?      @map("estimated_cost") @db.Decimal(10, 2)
+  paymentMethod   PaymentMethod @default(NONE) @map("payment_method")
+  acceptedAt      DateTime?     @map("accepted_at")
+  startedAt       DateTime?     @map("started_at")
+  doneAt          DateTime?     @map("done_at")
+  confirmedAt     DateTime?     @map("confirmed_at")
+  cancelledAt     DateTime?     @map("cancelled_at")
+  cancelReason    String?       @map("cancel_reason")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  recipient     User           @relation("TaskRecipient", fields: [recipientId], references: [id], onDelete: Restrict)
+  createdBy     User           @relation("TaskCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  volunteer     User?          @relation("TaskVolunteer", fields: [volunteerId], references: [id], onDelete: SetNull)
+  category      TaskCategory   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  address       Address        @relation(fields: [addressId], references: [id], onDelete: Restrict)
+  recurringRule RecurringRule? @relation(fields: [recurringRuleId], references: [id], onDelete: SetNull)
+
+  items         TaskItem[]
+  statusHistory TaskStatusHistory[]
+  comments      TaskComment[]
+  attachments   Attachment[]
+  reviews       Review[]
+  notifications Notification[]
+
+  @@index([status, windowStart])
+  @@index([recipientId])
+  @@index([volunteerId])
+  @@index([recurringRuleId, windowStart])
+  @@map("tasks")
+}
+
+model TaskItem {
+  id        String   @id @default(uuid()) @db.Uuid
+  taskId    String   @map("task_id") @db.Uuid
+  name      String   @db.VarChar(200)
+  quantity  String?  @db.VarChar(50)
+  unit      String?  @db.VarChar(20)
+  note      String?  @db.VarChar(300)
+  isChecked Boolean  @default(false) @map("is_checked")
+  position  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("task_items")
+}
+
+model RecurringRule {
+  id                   String        @id @default(uuid()) @db.Uuid
+  recipientId          String        @map("recipient_id") @db.Uuid
+  createdById          String        @map("created_by_id") @db.Uuid
+  categoryId           Int           @map("category_id")
+  addressId            String        @map("address_id") @db.Uuid
+  preferredVolunteerId String?       @map("preferred_volunteer_id") @db.Uuid
+  title                String        @db.VarChar(200)
+  description          String?
+  /// [{ name, quantity?, unit?, note? }] — копируется в task_items при генерации
+  itemsTemplate        Json          @default("[]") @map("items_template")
+  frequency            Frequency
+  /// ISO-дни недели: 1 = пн … 7 = вс (для WEEKLY / BIWEEKLY)
+  daysOfWeek           Int[]         @map("days_of_week")
+  /// 1–28 (для MONTHLY)
+  dayOfMonth           Int?          @map("day_of_month")
+  timeFrom             DateTime      @map("time_from") @db.Time(0)
+  timeTo               DateTime      @map("time_to") @db.Time(0)
+  startsOn             DateTime      @map("starts_on") @db.Date
+  endsOn               DateTime?     @map("ends_on") @db.Date
+  estimatedCost        Decimal?      @map("estimated_cost") @db.Decimal(10, 2)
+  paymentMethod        PaymentMethod @default(NONE) @map("payment_method")
+  isActive             Boolean       @default(true) @map("is_active")
+  lastGeneratedOn      DateTime?     @map("last_generated_on") @db.Date
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+
+  recipient          User         @relation("RuleRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  createdBy          User         @relation("RuleCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  preferredVolunteer User?        @relation("RulePreferredVolunteer", fields: [preferredVolunteerId], references: [id], onDelete: SetNull)
+  category           TaskCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  address            Address      @relation(fields: [addressId], references: [id], onDelete: Restrict)
+  tasks              Task[]
+
+  @@index([isActive])
+  @@index([recipientId])
+  @@map("recurring_rules")
+}
+
+model TaskStatusHistory {
+  id          String      @id @default(uuid()) @db.Uuid
+  taskId      String      @map("task_id") @db.Uuid
+  fromStatus  TaskStatus? @map("from_status")
+  toStatus    TaskStatus  @map("to_status")
+  /// null — переход сделала система (cron)
+  changedById String?     @map("changed_by_id") @db.Uuid
+  comment     String?
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  task      Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  changedBy User? @relation(fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([taskId, createdAt])
+  @@map("task_status_history")
+}
+
+model TaskComment {
+  id        String   @id @default(uuid()) @db.Uuid
+  taskId    String   @map("task_id") @db.Uuid
+  authorId  String   @map("author_id") @db.Uuid
+  text      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, createdAt])
+  @@map("task_comments")
+}
+
+model Attachment {
+  id           String         @id @default(uuid()) @db.Uuid
+  taskId       String         @map("task_id") @db.Uuid
+  uploadedById String         @map("uploaded_by_id") @db.Uuid
+  kind         AttachmentKind
+  filePath     String         @map("file_path") @db.VarChar(500)
+  originalName String?        @map("original_name") @db.VarChar(255)
+  mimeType     String         @map("mime_type") @db.VarChar(100)
+  sizeBytes    Int            @map("size_bytes")
+  createdAt    DateTime       @default(now()) @map("created_at")
+
+  task       Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  uploadedBy User @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("attachments")
+}
+
+model Review {
+  id        String   @id @default(uuid()) @db.Uuid
+  taskId    String   @map("task_id") @db.Uuid
+  authorId  String   @map("author_id") @db.Uuid
+  targetId  String   @map("target_id") @db.Uuid
+  /// 1–5 (проверяется DTO и CHECK-ограничением в миграции)
+  rating    Int      @db.SmallInt
+  comment   String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author User @relation("ReviewAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  target User @relation("ReviewTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, authorId])
+  @@index([targetId])
+  @@map("reviews")
+}
+
+// ─────────────────────────────── Уведомления ─────────────────────────────
+
+model Notification {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  taskId    String?   @map("task_id") @db.Uuid
+  type      String    @db.VarChar(50)
+  title     String    @db.VarChar(200)
+  body      String?
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task? @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@map("notifications")
+}
