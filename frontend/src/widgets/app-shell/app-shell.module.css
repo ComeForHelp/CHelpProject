@@ -1,0 +1,33 @@
+.root {
+  min-height: 100vh;
+}
+
+.header {
+  background: var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-3);
+}
+
+.logo {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--mantine-color-blue-8);
+  text-decoration: none;
+}
+
+.main {
+  padding-bottom: 4rem;
+}
+
+/* Меню всегда видно (никаких скрытых меню): на телефоне — сетка в две колонки, на компьютере — в строку */
+.nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--mantine-spacing-xs);
+}
+
+@media (min-width: $mantine-breakpoint-sm) {
+  .nav {
+    display: flex;
+    flex-wrap: wrap;
+  }
+}

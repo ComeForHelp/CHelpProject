@@ -1,0 +1,48 @@
+.tile {
+  display: block;
+  width: 100%;
+  min-height: 8rem;
+  padding: var(--mantine-spacing-md);
+  border: 2px solid var(--mantine-color-gray-4);
+  border-radius: var(--mantine-radius-md);
+  background: var(--mantine-color-white);
+  transition: border-color 120ms, background-color 120ms;
+
+  &:hover {
+    border-color: var(--mantine-color-blue-6);
+    background: var(--mantine-color-blue-0);
+  }
+
+  &[data-selected] {
+    border-color: var(--mantine-color-blue-8);
+    background: var(--mantine-color-blue-0);
+    box-shadow: inset 0 0 0 1px var(--mantine-color-blue-8);
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--mantine-color-blue-8);
+    outline-offset: 2px;
+  }
+}
+
+.tileIcon {
+  color: var(--mantine-color-blue-8);
+  display: flex;
+}
+
+.linkCard {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 120ms, box-shadow 120ms;
+
+  &:hover {
+    border-color: var(--mantine-color-blue-6);
+    box-shadow: var(--mantine-shadow-sm);
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--mantine-color-blue-8);
+    outline-offset: 2px;
+  }
+}

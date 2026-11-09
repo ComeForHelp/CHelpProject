@@ -1,0 +1,48 @@
+.tile {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 120ms, box-shadow 120ms;
+
+  &:hover {
+    border-color: var(--mantine-color-blue-6);
+    box-shadow: var(--mantine-shadow-sm);
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--mantine-color-blue-8);
+    outline-offset: 2px;
+  }
+}
+
+/* Полоса: один оттенок, тонкая (12px), скругление 4px только на конце данных — начало прижато к оси */
+.bar {
+  height: 12px;
+  min-width: 2px;
+  background: var(--mantine-color-blue-8);
+  border-radius: 0 4px 4px 0;
+}
+
+.barTable td {
+  vertical-align: middle;
+}
+
+/* Числа в столбце — моноширинные цифры, чтобы выравнивались */
+.num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.caption {
+  caption-side: top;
+  text-align: left;
+  font-weight: 700;
+  font-size: 1.1rem;
+  padding-bottom: 0.5rem;
+  color: var(--mantine-color-black);
+}
+
+/* Фон индикатора — светлый шаг того же синего, а не серый */
+.meterTrack {
+  background-color: var(--mantine-color-blue-1);
+}

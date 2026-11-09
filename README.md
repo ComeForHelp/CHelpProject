@@ -40,7 +40,7 @@ ComeForHelp
 | Часть | Стек | Папка |
 |---|---|---|
 | Backend | NestJS · Prisma · PostgreSQL · JWT · Swagger · @nestjs/schedule | [`backend/`](backend/) |
-| Frontend | Next.js (App Router) · Mantine · TanStack Query · Zustand | `frontend/` (в работе) |
+| Frontend | Next.js (App Router) · Mantine · TanStack Query · Zustand · React Hook Form + Zod | [`frontend/`](frontend/) |
 | Документы | ER-диаграмма, жизненный цикл заявки, памятка для фронтенда | [`docs/`](docs/) |
 
 ## Быстрый старт (Docker)
@@ -50,6 +50,7 @@ docker compose up -d --build
 docker compose exec backend npx prisma db seed     # районы, категории, тестовые пользователи
 ```
 
+- **Сайт: http://localhost:3000**
 - API: http://localhost:3001/api/v1
 - Swagger (контракт для фронтенда): http://localhost:3001/api/docs
 - Типы TypeScript для фронтенда: `npx openapi-typescript http://localhost:3001/api/docs-json -o schema.d.ts`
@@ -86,6 +87,60 @@ npm run start:dev
 | `npm run test:e2e` | сквозной сценарий на реальной БД |
 | `npm run lint` | ESLint |
 | `npm run prisma:migrate` | новая миграция после правки `schema.prisma` |
+
+## Запуск frontend без Docker
+
+Backend должен работать на `localhost:3001`.
+
+```bash
+cd frontend
+cp .env.example .env.local    # NEXT_PUBLIC_API_URL
+npm install
+npm run dev                   # http://localhost:3000
+```
+
+| Команда | Что делает |
+|---|---|
+| `npm run dev` | сайт с перезагрузкой при изменениях |
+| `npm test` | модульные тесты и проверка доступности (axe) |
+| `npm run lint` | ESLint, в том числе правило слоёв FSD |
+| `npm run typecheck` | проверка типов |
+| `npm run build` | production-сборка (`output: standalone` для Docker) |
+| `npm run api:types` | обновить типы из Swagger backend после изменений API |
+
+Если сборка падает с нехваткой памяти (Windows без файла подкачки): `NEXT_BUILD_CPUS=1 npm run build`.
+
+## Устройство frontend
+
+Маршруты — папки в `src/app/` (App Router), у каждой роли свой раздел с `layout.tsx`.
+`page.tsx` тонкие: только собирают страницу из виджетов. Код — по упрощённому Feature-Sliced Design;
+слой импортирует только из слоёв ниже (`app → widgets → features → entities → shared`), это проверяет ESLint.
+
+```
+frontend/src/
+├── app/                   маршруты: (public), my, family, volunteer, coord
+├── middleware.ts          нет входа → /login; чужая роль → свой кабинет
+├── widgets/               TaskDetails, TaskCatalog, RecipientHome, StatCards, TasksTable, ReportsPanel…
+├── features/              create-task (мастер), task-actions, task-content, recurring, address, profile, auth…
+├── entities/              task, address, category, user, relative, recipient, volunteer, recurring, report
+└── shared/
+    ├── api/               axios-клиент (один общий refresh), типы из Swagger
+    ├── ui/                BigButton, IconTile, StepIndicator, StatusBadge, PhoneLink, FontSizeSwitcher…
+    ├── lib/               даты по Владивостоку, телефоны, деньги
+    ├── model/             Zustand: сессия, размер шрифта
+    ├── theme/             тема Mantine: шрифт 18 px, кнопки от 48 px, контраст AA
+    └── config/            словари, маршруты по ролям
+```
+
+| Раздел | Кому | Главное |
+|---|---|---|
+| `/my` | получатель | кнопка «Нужна помощь» → мастер из 6 шагов, один вопрос на экран, черновик не теряется |
+| `/family` | родственник | подопечные, привязка по телефону или регистрация, те же экраны от имени подопечного |
+| `/volunteer` | волонтёр | под телефон: каталог с фильтрами, «Взять», отметки покупок, фото чека с камеры |
+| `/coord` | координатор | под компьютер: дашборд, таблица заявок, заявка по звонку, проверка волонтёров, отчёты |
+
+Что видит волонтёр до и после «Взять», какие кнопки показывать, как работать с токенами —
+в [docs/frontend-api.md](docs/frontend-api.md).
 
 ## Устройство backend
 

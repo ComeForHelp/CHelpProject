@@ -1,0 +1,42 @@
+/* Базовый шрифт 18 px (требование ТЗ); переключатель меняет его на 20 или 22 px. */
+html {
+  font-size: 18px;
+}
+
+body {
+  background: var(--mantine-color-gray-0);
+  color: var(--mantine-color-black);
+  line-height: 1.5;
+}
+
+/* Ссылка «перейти к содержимому» для клавиатуры и экранных дикторов */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 1000;
+  padding: 0.75rem 1rem;
+  background: var(--mantine-color-blue-8);
+  color: var(--mantine-color-white);
+  font-weight: 700;
+}
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+}
+
+/* Заметная рамка фокуса — для тех, кто пользуется клавиатурой */
+:focus-visible {
+  outline: 3px solid var(--mantine-color-blue-8);
+  outline-offset: 2px;
+}
+
+/* Без анимаций для тех, кто их отключил */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

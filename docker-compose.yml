@@ -1,8 +1,8 @@
 # Одна команда поднимает всё у каждого участника:
-#   docker compose up -d --build                     — PostgreSQL + backend
-#   docker compose --profile full up -d --build      — + frontend (когда появится папка frontend/)
+#   docker compose up -d --build                     — PostgreSQL + backend + frontend
 #   docker compose exec backend npx prisma db seed   — районы, категории, тестовые пользователи
 #
+# Сайт:    http://localhost:3000
 # Swagger: http://localhost:3001/api/docs
 
 services:
@@ -53,13 +53,14 @@ services:
       - uploads:/app/uploads
 
   frontend:
-    profiles: ['full']
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        # Адрес API вшивается в код при сборке: браузер обращается к backend напрямую
+        NEXT_PUBLIC_API_URL: http://localhost:3001/api/v1
     restart: unless-stopped
     depends_on:
       - backend
-    environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3001/api/v1
     ports:
       - '3000:3000'
 
