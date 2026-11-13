@@ -2,6 +2,7 @@
 
 import {
   Badge,
+  Box,
   Button,
   Drawer,
   Indicator,
@@ -69,7 +70,9 @@ export function NotificationsButton({ taskHref }: { taskHref: (taskId: string) =
           onClick={() => setOpened(true)}
           aria-label={count ? `Уведомления: ${count} новых` : 'Уведомления'}
         >
-          Уведомления
+          <Box component="span" visibleFrom="sm">
+            Уведомления
+          </Box>
         </Button>
       </Indicator>
       <Drawer
@@ -99,10 +102,10 @@ export function NotificationsButton({ taskHref }: { taskHref: (taskId: string) =
           ) : list.data?.items.length ? (
             list.data.items.map((n) => (
               <UnstyledButton key={n.id} onClick={() => open(n)} style={{ display: 'block' }}>
-                <Paper withBorder p="sm" radius="md" bg={n.readAt ? undefined : 'blue.0'}>
+                <Paper withBorder p="sm" radius="md" bg={n.readAt ? undefined : 'brand.0'}>
                   <Stack gap={2}>
                     {!n.readAt && (
-                      <Badge color="blue" c="blue.9" size="sm">
+                      <Badge color="brand" c="brand.8" size="sm">
                         Новое
                       </Badge>
                     )}

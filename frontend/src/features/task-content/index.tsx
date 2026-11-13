@@ -36,60 +36,64 @@ import { EmptyState, LoadingBlock, confirmAction } from '@/shared/ui';
 
 // ───────────── Список покупок с отметками (ShoppingChecklist) ─────────────
 
-/** Волонтёр отмечает купленное. Отметка сразу видна и получателю. */
+/**
+ * Волонтёр отмечает купленное. Отметка меняется сразу в момент нажатия (локально),
+ * затем уходит на сервер; при ошибке возвращается обратно. Получатель видит её при обновлении.
+ */
 export function ShoppingChecklist({ task }: { task: TaskDetail }) {
   const queryClient = useQueryClient();
+  // Отметки, ещё не подтверждённые сервером: id позиции → новое значение
+  const [pending, setPending] = useState<Record<string, boolean>>({});
+  const forget = (id: string) =>
+    setPending((p) => {
+      const next = { ...p };
+      delete next[id];
+      return next;
+    });
+
   const toggle = useMutation({
     mutationFn: ({ id, isChecked }: { id: string; isChecked: boolean }) =>
       api.patch(`/tasks/${task.id}/items/${id}`, { isChecked } satisfies S['UpdateTaskItemDto']),
-    // Отметка появляется сразу, не дожидаясь сервера
-    onMutate: async ({ id, isChecked }) => {
-      const key = taskKeys.detail(task.id);
-      await queryClient.cancelQueries({ queryKey: key });
-      const prev = queryClient.getQueryData<TaskDetail>(key);
-      if (prev) {
-        queryClient.setQueryData<TaskDetail>(key, {
-          ...prev,
-          items: prev.items.map((i) => (i.id === id ? { ...i, isChecked } : i)),
-        });
-      }
-      return { prev };
+    onSuccess: async (_d, { id }) => {
+      await queryClient.invalidateQueries({ queryKey: taskKeys.detail(task.id) });
+      forget(id);
     },
-    onError: (e, _v, ctx) => {
-      if (ctx?.prev) queryClient.setQueryData(taskKeys.detail(task.id), ctx.prev);
+    onError: (e, { id }) => {
+      forget(id);
       notifications.show({ color: 'red', message: getErrorMessage(e) });
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: taskKeys.detail(task.id) }),
   });
 
-  const done = task.items.filter((i) => i.isChecked).length;
+  const isChecked = (item: S['TaskItemDto']) => pending[item.id] ?? item.isChecked;
+  const done = task.items.filter(isChecked).length;
   return (
     <Stack gap="sm">
       <Text c="dimmed">
         Куплено {done} из {task.items.length}
       </Text>
-      {task.items.map((item) => (
-        <Paper
-          key={item.id}
-          withBorder
-          p="sm"
-          radius="md"
-          bg={item.isChecked ? 'green.0' : undefined}
-        >
-          <Checkbox
-            size="lg"
-            checked={item.isChecked}
-            onChange={(e) => toggle.mutate({ id: item.id, isChecked: e.currentTarget.checked })}
-            label={
-              <Text size="lg" td={item.isChecked ? 'line-through' : undefined}>
-                {item.name}
-                {item.quantity ? ` — ${item.quantity}${item.unit ? ` ${item.unit}` : ''}` : ''}
-                {item.note ? ` (${item.note})` : ''}
-              </Text>
-            }
-          />
-        </Paper>
-      ))}
+      {task.items.map((item) => {
+        const checked = isChecked(item);
+        return (
+          <Paper key={item.id} withBorder p="sm" radius="md" bg={checked ? 'green.0' : undefined}>
+            <Checkbox
+              size="lg"
+              checked={checked}
+              onChange={(e) => {
+                const value = e.currentTarget.checked;
+                setPending((p) => ({ ...p, [item.id]: value }));
+                toggle.mutate({ id: item.id, isChecked: value });
+              }}
+              label={
+                <Text size="lg" td={checked ? 'line-through' : undefined}>
+                  {item.name}
+                  {item.quantity ? ` — ${item.quantity}${item.unit ? ` ${item.unit}` : ''}` : ''}
+                  {item.note ? ` (${item.note})` : ''}
+                </Text>
+              }
+            />
+          </Paper>
+        );
+      })}
     </Stack>
   );
 }
@@ -299,7 +303,7 @@ export function TaskComments({ taskId }: { taskId: string }) {
               key={c.id}
               p="sm"
               radius="md"
-              bg={mine ? 'blue.0' : 'gray.1'}
+              bg={mine ? 'brand.0' : 'ink.0'}
               ml={mine ? 'xl' : 0}
               mr={mine ? 0 : 'xl'}
             >

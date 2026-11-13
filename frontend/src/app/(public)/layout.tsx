@@ -1,10 +1,6 @@
-import { Container } from '@mantine/core';
 import type { ReactNode } from 'react';
+import { PublicShell } from '@/widgets/public-shell';
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
-  return (
-    <Container component="main" id="main" size="md" py="xl">
-      {children}
-    </Container>
-  );
+  return <PublicShell>{children}</PublicShell>;
 }

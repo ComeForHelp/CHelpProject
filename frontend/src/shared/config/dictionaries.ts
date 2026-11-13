@@ -9,14 +9,29 @@ import type {
 } from '../api/types';
 
 /** Понятные слова вместо терминов (требование ТЗ: «Взяли в работу», а не «ASSIGNED»). */
-export const TASK_STATUS: Record<TaskStatus, { label: string; color: string; short: string }> = {
-  NEW: { label: 'Ждёт волонтёра', short: 'Создана', color: 'blue' },
-  ASSIGNED: { label: 'Волонтёр взял', short: 'Взяли', color: 'violet' },
-  IN_PROGRESS: { label: 'Выполняется', short: 'В пути', color: 'orange' },
-  DONE: { label: 'Выполнена — подтвердите', short: 'Выполнена', color: 'teal' },
-  CONFIRMED: { label: 'Принята', short: 'Принята', color: 'green' },
-  CANCELLED: { label: 'Отменена', short: 'Отменена', color: 'gray' },
-  EXPIRED: { label: 'Не взята в срок', short: 'Истекла', color: 'red' },
+/** Цвета «пилюль» из макета: светлый фон + тёмный текст, контраст 5,7–7,2:1. */
+export const TONE = {
+  warn: { bg: '#FFF4DB', fg: '#7A5000' },
+  info: { bg: '#E8F1FA', fg: '#1D5F99' },
+  ok: { bg: '#E6F4EA', fg: '#1E6B40' },
+  err: { bg: '#FDECEA', fg: '#B3261E' },
+  brand: { bg: '#FFF0E6', fg: '#963B00' },
+  neutral: { bg: '#EBEFED', fg: '#3F4A46' },
+} as const;
+export type Tone = keyof typeof TONE;
+
+/** Понятные слова вместо терминов (требование ТЗ: «Взяли в работу», а не «ASSIGNED»). */
+export const TASK_STATUS: Record<
+  TaskStatus,
+  { label: string; short: string; tone: Tone; color: string }
+> = {
+  NEW: { label: 'Ждёт волонтёра', short: 'Создана', tone: 'warn', color: 'yellow' },
+  ASSIGNED: { label: 'Волонтёр взял', short: 'Взяли', tone: 'info', color: 'blue' },
+  IN_PROGRESS: { label: 'В работе', short: 'В пути', tone: 'info', color: 'blue' },
+  DONE: { label: 'Выполнена — подтвердите', short: 'Выполнена', tone: 'brand', color: 'brand' },
+  CONFIRMED: { label: 'Выполнена', short: 'Принята', tone: 'ok', color: 'green' },
+  CANCELLED: { label: 'Отменена', short: 'Отменена', tone: 'err', color: 'red' },
+  EXPIRED: { label: 'Не взята в срок', short: 'Истекла', tone: 'neutral', color: 'gray' },
 };
 
 export const PAYMENT_METHOD: Record<PaymentMethod, { label: string; hint: string }> = {

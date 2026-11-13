@@ -27,8 +27,8 @@ export function WardCards() {
                     {l.recipient.phone && <Text c="dimmed">{formatPhone(l.recipient.phone)}</Text>}
                     <Group gap="xs">
                       <Badge
-                        color={l.activeTasks ? 'blue' : 'gray'}
-                        c={l.activeTasks ? 'blue.9' : 'gray.9'}
+                        color={l.activeTasks ? 'brand' : 'ink'}
+                        c={l.activeTasks ? 'brand.8' : 'ink.7'}
                       >
                         {l.activeTasks
                           ? `${l.activeTasks} ${plural(l.activeTasks, ['активная заявка', 'активные заявки', 'активных заявок'])}`

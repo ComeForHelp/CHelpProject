@@ -274,7 +274,7 @@ export function AddressManager({ recipientId }: { recipientId?: string }) {
                       <Group gap="xs">
                         {a.label && <Text fw={700}>{a.label}</Text>}
                         {a.isDefault && (
-                          <Badge color="blue" c="blue.9">
+                          <Badge color="brand" c="brand.8">
                             Основной
                           </Badge>
                         )}

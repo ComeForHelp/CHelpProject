@@ -110,7 +110,7 @@ export function StatCards() {
     return <ErrorBlock error={dash.error} onRetry={() => dash.refetch()} />;
   const d = dash.data;
   return (
-    <SimpleGrid cols={{ base: 2, sm: 3, lg: 6 }} spacing="md">
+    <SimpleGrid cols={{ base: 1, xs: 2, md: 3 }} spacing="md">
       <StatTile label="Без волонтёра" value={d.unassigned} href="/coord/tasks?status=NEW" />
       <StatTile
         label="Срочные"
@@ -137,7 +137,7 @@ export function StatCards() {
         href="/coord/tasks?status=DONE"
       />
       <StatTile
-        label="Волонтёры на проверку"
+        label="Волонтёры на проверке"
         value={d.pendingVolunteers}
         href="/coord/volunteers?tab=PENDING"
       />
@@ -707,7 +707,7 @@ export function ReportsPanel() {
                     {/* Meter: заливка и фон — один оттенок */}
                     <Progress
                       value={rate ?? 0}
-                      color="blue.8"
+                      color="brand.6"
                       size="md"
                       radius="xl"
                       classNames={{ root: classes.meterTrack }}
@@ -825,3 +825,5 @@ export function SectionTitle({ children }: { children: ReactNode }) {
     </Title>
   );
 }
+
+export { PendingVolunteers, RecentTasks, WeekChart } from './overview';

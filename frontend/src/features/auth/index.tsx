@@ -7,12 +7,12 @@ import {
   Button,
   Checkbox,
   PasswordInput,
-  SimpleGrid,
+  Group,
+  Radio,
   Stack,
   Text,
   TextInput,
 } from '@mantine/core';
-import { IconHeartHandshake, IconUserHeart, IconUsers } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -25,7 +25,7 @@ import type { S } from '@/shared/api/types';
 import { ROLE_HOME } from '@/shared/config/routes';
 import { isValidPhone, phoneInputToApi } from '@/shared/lib/format';
 import { useSession } from '@/shared/model/session';
-import { IconTile } from '@/shared/ui';
+import classes from './auth.module.css';
 
 const phoneSchema = z
   .string()
@@ -106,17 +106,15 @@ export function LoginForm() {
             {error}
           </Alert>
         )}
-        <Button type="submit" size="xl" loading={form.formState.isSubmitting}>
+        <Button type="submit" size="xl" fullWidth loading={form.formState.isSubmitting}>
           Войти
         </Button>
-        <Text ta="center">
+        <Text c="dimmed">Забыли пароль? Позвоните координатору — он поможет войти.</Text>
+        <Text>
           Нет аккаунта?{' '}
-          <Anchor component={Link} href="/register" fw={700}>
+          <Anchor component={Link} href="/choose" fw={600}>
             Зарегистрироваться
           </Anchor>
-        </Text>
-        <Text ta="center" c="dimmed" size="sm">
-          Забыли пароль? Позвоните координатору — он поможет войти.
         </Text>
       </Stack>
     </form>
@@ -129,33 +127,46 @@ export const REGISTER_ROLES = [
   {
     value: 'RECIPIENT',
     label: 'Мне нужна помощь',
-    description: 'Купить продукты, лекарства, проводить к врачу',
-    icon: <IconUserHeart size={40} />,
+    description: 'Оставлять заявки на бытовые поручения',
   },
   {
     value: 'RELATIVE',
-    label: 'Помогаю родному',
-    description: 'Оформляю заявки за маму, папу, бабушку',
-    icon: <IconUsers size={40} />,
+    label: 'Помогаю близкому',
+    description: 'Оформлять помощь для родственника',
   },
-  {
-    value: 'VOLUNTEER',
-    label: 'Хочу помогать',
-    description: 'Стать волонтёром после проверки',
-    icon: <IconHeartHandshake size={40} />,
-  },
+  { value: 'VOLUNTEER', label: 'Хочу помогать', description: 'Выполнять поручения после проверки' },
 ] as const;
 type RegisterRole = (typeof REGISTER_ROLES)[number]['value'];
+
+/**
+ * «Иванова Мария Петровна» → фамилия, имя, отчество (как в макете — одно поле «ФИО»).
+ * Всё после второго слова — отчество (бывает из нескольких слов: «Ахмед оглы»).
+ */
+export function splitFullName(
+  value: string,
+): { lastName: string; firstName: string; middleName?: string } | null {
+  const parts = value.trim().split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return null;
+  const [lastName, firstName, ...rest] = parts;
+  return { lastName, firstName, middleName: rest.join(' ') || undefined };
+}
 
 const registerSchema = z
   .object({
     role: z.enum(['RECIPIENT', 'RELATIVE', 'VOLUNTEER'], {
       errorMap: () => ({ message: 'Выберите, кто вы' }),
     }),
-    lastName: z.string().trim().min(1, 'Введите фамилию').max(100),
-    firstName: z.string().trim().min(1, 'Введите имя').max(100),
-    middleName: z.string().trim().max(100).optional(),
+    fullName: z
+      .string()
+      .trim()
+      .min(1, 'Введите фамилию и имя')
+      .max(300)
+      .refine(
+        (v) => !!splitFullName(v),
+        'Введите фамилию и имя через пробел, например «Иванова Мария Петровна»',
+      ),
     phone: phoneSchema,
+    email: z.union([z.literal(''), z.string().trim().email('Неверный адрес почты')]),
     password: z.string().min(8, 'Пароль — не короче 8 символов').max(72),
     password2: z.string(),
     pdConsent: z.literal(true, {
@@ -178,10 +189,9 @@ export function RegisterForm() {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       role: initialRole,
-      lastName: '',
-      firstName: '',
-      middleName: '',
+      fullName: '',
       phone: '',
+      email: '',
       password: '',
       password2: '',
       pdConsent: false as unknown as true,
@@ -191,14 +201,14 @@ export function RegisterForm() {
 
   const onSubmit = form.handleSubmit(async (v) => {
     setError(null);
+    const name = splitFullName(v.fullName)!;
     try {
       const { data } = await api.post<S['AuthResponseDto']>('/auth/register', {
         role: v.role,
         phone: phoneInputToApi(v.phone),
         password: v.password,
-        lastName: v.lastName,
-        firstName: v.firstName,
-        middleName: v.middleName || undefined,
+        ...name,
+        email: v.email || undefined,
         pdConsent: true,
       } satisfies S['RegisterDto']);
       afterAuth(data);
@@ -214,68 +224,71 @@ export function RegisterForm() {
           control={form.control}
           name="role"
           render={({ field }) => (
-            <Stack gap="xs">
-              <Text fw={700} size="lg" id="role-label">
-                Кто вы?
-              </Text>
-              <SimpleGrid cols={{ base: 1, sm: 3 }} role="group" aria-labelledby="role-label">
+            <Radio.Group
+              label="Кто вы?"
+              value={field.value ?? ''}
+              onChange={(v) => field.onChange(v as RegisterRole)}
+              error={errors.role?.message}
+            >
+              <Stack gap="sm" mt={4}>
                 {REGISTER_ROLES.map((r) => (
-                  <IconTile
+                  <Radio.Card
                     key={r.value}
-                    icon={r.icon}
-                    label={r.label}
-                    description={r.description}
-                    selected={field.value === r.value}
-                    onClick={() => field.onChange(r.value as RegisterRole)}
-                  />
+                    value={r.value}
+                    radius="md"
+                    p="md"
+                    className={classes.option}
+                  >
+                    <Group wrap="nowrap" align="flex-start" gap="md">
+                      <Radio.Indicator mt={3} />
+                      <Stack gap={0}>
+                        <Text fw={700}>{r.label}</Text>
+                        <Text c="dimmed" size="sm">
+                          {r.description}
+                        </Text>
+                      </Stack>
+                    </Group>
+                  </Radio.Card>
                 ))}
-              </SimpleGrid>
-              {errors.role && (
-                <Text c="red.8" role="alert">
-                  {errors.role.message}
-                </Text>
-              )}
-            </Stack>
+              </Stack>
+            </Radio.Group>
           )}
         />
         <TextInput
-          label="Фамилия"
-          autoComplete="family-name"
-          {...form.register('lastName')}
-          error={errors.lastName?.message}
+          label="ФИО"
+          placeholder="Иванова Мария Петровна"
+          autoComplete="name"
+          {...form.register('fullName')}
+          error={errors.fullName?.message}
         />
         <TextInput
-          label="Имя"
-          autoComplete="given-name"
-          {...form.register('firstName')}
-          error={errors.firstName?.message}
-        />
-        <TextInput
-          label="Отчество"
-          description="Если есть"
-          autoComplete="additional-name"
-          {...form.register('middleName')}
-          error={errors.middleName?.message}
-        />
-        <TextInput
-          label="Телефон"
+          label="Номер телефона"
           description="По нему вы будете входить"
-          placeholder="+7 914 123-45-67"
+          placeholder="+7 (914) 123-45-67"
           type="tel"
           inputMode="tel"
           autoComplete="tel"
           {...form.register('phone')}
           error={errors.phone?.message}
         />
+        <TextInput
+          label="Электронная почта"
+          description="Необязательно"
+          placeholder="name@example.ru"
+          type="email"
+          autoComplete="email"
+          {...form.register('email')}
+          error={errors.email?.message}
+        />
         <PasswordInput
           label="Пароль"
-          description="Не короче 8 символов"
+          description="Не менее 8 символов"
           autoComplete="new-password"
           {...form.register('password')}
           error={errors.password?.message}
         />
         <PasswordInput
-          label="Пароль ещё раз"
+          label="Повторите пароль"
           autoComplete="new-password"
           {...form.register('password2')}
           error={errors.password2?.message}
@@ -287,7 +300,14 @@ export function RegisterForm() {
             <Checkbox
               checked={!!field.value}
               onChange={(e) => field.onChange(e.currentTarget.checked)}
-              label="Согласен(на) на обработку персональных данных: ФИО, телефона и адреса — только для выполнения заявок"
+              label={
+                <>
+                  Я согласен(на) на обработку персональных данных.{' '}
+                  <Anchor component={Link} href="/privacy" target="_blank">
+                    Читать политику
+                  </Anchor>
+                </>
+              }
               error={errors.pdConsent?.message}
             />
           )}
@@ -297,12 +317,12 @@ export function RegisterForm() {
             {error}
           </Alert>
         )}
-        <Button type="submit" size="xl" loading={form.formState.isSubmitting}>
+        <Button type="submit" size="xl" fullWidth loading={form.formState.isSubmitting}>
           Зарегистрироваться
         </Button>
-        <Text ta="center">
+        <Text>
           Уже есть аккаунт?{' '}
-          <Anchor component={Link} href="/login" fw={700}>
+          <Anchor component={Link} href="/login" fw={600}>
             Войти
           </Anchor>
         </Text>

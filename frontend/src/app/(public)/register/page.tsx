@@ -1,19 +1,19 @@
-import { Paper, Stack, Title } from '@mantine/core';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { RegisterForm } from '@/features/auth';
+import { FormColumn } from '@/widgets/public-shell';
 
 export const metadata: Metadata = { title: 'Регистрация' };
 
 export default function RegisterPage() {
   return (
-    <Stack maw={720} mx="auto" gap="lg">
-      <Title order={1}>Регистрация</Title>
-      <Paper withBorder p="lg" radius="md">
-        <Suspense>
-          <RegisterForm />
-        </Suspense>
-      </Paper>
-    </Stack>
+    <FormColumn
+      title="Регистрация"
+      description="Заполните данные. Все поля, кроме почты, обязательны."
+    >
+      <Suspense>
+        <RegisterForm />
+      </Suspense>
+    </FormColumn>
   );
 }

@@ -80,17 +80,17 @@ export function CatalogTaskCard({ task, href }: { task: CatalogCard; href: strin
             </Badge>
           )}
           {task.itemsCount > 0 && (
-            <Badge color="blue" c="blue.9">
+            <Badge color="ink" c="ink.8">
               {task.itemsCount} {plural(task.itemsCount, ['позиция', 'позиции', 'позиций'])}
             </Badge>
           )}
           {task.estimatedCost ? (
-            <Badge color="teal" c="teal.9">
+            <Badge color="ink" c="ink.8">
               ≈ {formatMoney(task.estimatedCost)}
             </Badge>
           ) : null}
         </Group>
-        <Text c="blue.8" fw={600}>
+        <Text c="brand.7" fw={700}>
           Подробнее →
         </Text>
       </Stack>

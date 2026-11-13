@@ -8,8 +8,8 @@ import { LoadingBlock } from '@/shared/ui';
 import { AppLayout } from '@/widgets/app-shell';
 
 const NAV = [
-  { href: '/volunteer/catalog', label: 'Заявки', icon: <IconList size={20} aria-hidden /> },
-  { href: '/volunteer/my', label: 'Поручения', icon: <IconListCheck size={20} aria-hidden /> },
+  { href: '/volunteer/catalog', label: 'Каталог', icon: <IconList size={20} aria-hidden /> },
+  { href: '/volunteer/my', label: 'Мои поручения', icon: <IconListCheck size={20} aria-hidden /> },
   { href: '/volunteer/history', label: 'История', icon: <IconHistory size={20} aria-hidden /> },
   { href: '/volunteer/profile', label: 'Профиль', icon: <IconUser size={20} aria-hidden /> },
 ];

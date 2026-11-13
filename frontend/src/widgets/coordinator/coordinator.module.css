@@ -5,12 +5,12 @@
   transition: border-color 120ms, box-shadow 120ms;
 
   &:hover {
-    border-color: var(--mantine-color-blue-6);
+    border-color: var(--mantine-color-brand-6);
     box-shadow: var(--mantine-shadow-sm);
   }
 
   &:focus-visible {
-    outline: 3px solid var(--mantine-color-blue-8);
+    outline: 3px solid #1d5f99;
     outline-offset: 2px;
   }
 }
@@ -19,7 +19,7 @@
 .bar {
   height: 12px;
   min-width: 2px;
-  background: var(--mantine-color-blue-8);
+  background: var(--mantine-color-brand-6);
   border-radius: 0 4px 4px 0;
 }
 
@@ -44,5 +44,43 @@
 
 /* Фон индикатора — светлый шаг того же синего, а не серый */
 .meterTrack {
-  background-color: var(--mantine-color-blue-1);
+  background-color: var(--mantine-color-brand-0);
+}
+
+/* «Заявки за неделю»: столбики до 24px, скругление только сверху (конец данных), основа прижата к оси */
+.week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  align-items: end;
+}
+
+.weekCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  border-radius: 8px;
+  outline-offset: 2px;
+}
+
+.weekTrack {
+  width: 100%;
+  height: 140px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  border-bottom: 1px solid var(--mantine-color-ink-2);
+}
+
+.weekBar {
+  width: 24px;
+  min-height: 2px;
+  background: var(--mantine-color-brand-6);
+  border-radius: 4px 4px 0 0;
+}
+
+.weekLabel[data-today] {
+  color: var(--mantine-color-ink-8);
+  font-weight: 700;
 }

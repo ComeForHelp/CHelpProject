@@ -14,11 +14,11 @@ import { AppLayout } from '@/widgets/app-shell';
 const NAV = [
   {
     href: '/coord',
-    label: 'Дашборд',
+    label: 'Обзор',
     icon: <IconLayoutDashboard size={20} aria-hidden />,
     exact: true,
   },
-  { href: '/coord/tasks', label: 'Заявки', icon: <IconClipboardList size={20} aria-hidden /> },
+  { href: '/coord/tasks', label: 'Все заявки', icon: <IconClipboardList size={20} aria-hidden /> },
   {
     href: '/coord/tasks/new',
     label: 'Заявка по звонку',

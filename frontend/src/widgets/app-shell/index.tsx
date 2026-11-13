@@ -1,7 +1,7 @@
 'use client';
 
-import { Box, Button, Container, Group, Paper, Stack, Text } from '@mantine/core';
-import { IconLogout } from '@tabler/icons-react';
+import { Box, Button, Divider, Group, Stack, Text, UnstyledButton } from '@mantine/core';
+import { IconLogout, IconUser } from '@tabler/icons-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { type ReactNode, useEffect, useState } from 'react';
@@ -9,7 +9,7 @@ import { useLogout } from '@/features/auth';
 import { NotificationsButton } from '@/features/notifications';
 import { ROLE_LABEL } from '@/shared/config/dictionaries';
 import { useSession } from '@/shared/model/session';
-import { FontSizeSwitcher } from '@/shared/ui';
+import { FontSizeSwitcher, Logo } from '@/shared/ui';
 import classes from './app-shell.module.css';
 
 export interface NavItem {
@@ -28,8 +28,8 @@ function useHydrated() {
 }
 
 /**
- * Header + навигация раздела. Никаких скрытых меню и свайпов:
- * все пункты видны кнопками с подписями, на телефоне переносятся на новую строку.
+ * Каркас кабинетов по макету: шапка, слева меню (на компьютере),
+ * внизу панель вкладок (на телефоне). Меню всегда видно — никаких скрытых меню (ТЗ).
  */
 export function AppLayout({
   nav,
@@ -54,57 +54,99 @@ export function AppLayout({
       ? pathname === item.href
       : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
+  const links = (variant: 'side' | 'tab') =>
+    nav.map((item) => {
+      const active = isActive(item);
+      return (
+        <Link
+          key={item.href}
+          href={item.href}
+          className={variant === 'side' ? classes.sideLink : classes.tabLink}
+          data-active={active || undefined}
+          aria-current={active ? 'page' : undefined}
+        >
+          {item.icon}
+          <span>{item.label}</span>
+        </Link>
+      );
+    });
+
   return (
     <Box className={classes.root}>
-      <Paper component="header" className={classes.header} radius={0} shadow="xs">
-        <Container size={size} py="sm">
-          <Stack gap="sm">
-            <Group justify="space-between" wrap="wrap" gap="sm">
-              <Link href="/" className={classes.logo}>
-                Иду на помощь!
-              </Link>
-              <Group gap="sm" wrap="wrap">
-                {showFontSwitcher && <FontSizeSwitcher />}
-                {hydrated && user && <NotificationsButton taskHref={taskHref} />}
-                <Button
-                  variant="default"
-                  size="md"
-                  leftSection={<IconLogout size={20} aria-hidden />}
-                  onClick={logout}
-                >
-                  Выйти
-                </Button>
-              </Group>
-            </Group>
+      <header className={classes.header}>
+        <Group justify="space-between" wrap="nowrap" gap="sm" h="100%" px="md">
+          <Logo href={nav[0]?.href ?? '/'} />
+          <Group gap="xs" wrap="nowrap">
+            {hydrated && user && <NotificationsButton taskHref={taskHref} />}
             {hydrated && user && (
-              <Text c="dimmed" size="sm">
-                {user.firstName} {user.lastName} · {ROLE_LABEL[user.role]}
-              </Text>
+              <Group gap={8} wrap="nowrap" className={classes.userChip}>
+                <span className={classes.avatar} aria-hidden>
+                  <IconUser size={18} />
+                </span>
+                <Text fw={600} size="sm" truncate maw={180}>
+                  {user.lastName} {user.firstName}
+                </Text>
+              </Group>
             )}
-            <Box component="nav" aria-label="Разделы" className={classes.nav}>
-              {nav.map((item) => {
-                const active = isActive(item);
-                return (
-                  <Button
-                    key={item.href}
-                    component={Link}
-                    href={item.href}
-                    size="md"
-                    variant={active ? 'filled' : 'light'}
-                    leftSection={item.icon}
-                    aria-current={active ? 'page' : undefined}
-                  >
-                    {item.label}
-                  </Button>
-                );
-              })}
-            </Box>
-          </Stack>
-        </Container>
-      </Paper>
-      <Container component="main" id="main" size={size} py="lg" className={classes.main}>
-        {children}
-      </Container>
+            <Button
+              variant="default"
+              size="md"
+              onClick={logout}
+              leftSection={<IconLogout size={18} aria-hidden />}
+              className={classes.logout}
+            >
+              Выйти
+            </Button>
+          </Group>
+        </Group>
+      </header>
+
+      <div className={classes.shell}>
+        <aside className={classes.side} aria-label="Меню">
+          <div className={classes.sideInner}>
+            <nav aria-label="Разделы">
+              <Stack gap={4}>{links('side')}</Stack>
+            </nav>
+            {showFontSwitcher && (
+              <>
+                <Divider my="md" color="ink.2" />
+                <Text size="sm" c="dimmed" fw={600} mb={6} px={4}>
+                  Размер шрифта
+                </Text>
+                <FontSizeSwitcher />
+              </>
+            )}
+            {hydrated && user && (
+              <>
+                <Divider my="md" color="ink.2" />
+                <Text size="sm" c="dimmed" px={4}>
+                  {user.firstName} {user.lastName}
+                  <br />
+                  {ROLE_LABEL[user.role]}
+                </Text>
+              </>
+            )}
+          </div>
+        </aside>
+
+        <main id="main" className={classes.main} data-size={size}>
+          <div className={classes.content}>{children}</div>
+        </main>
+      </div>
+
+      {/* Телефон: вкладки внизу экрана, у каждой — иконка и подпись */}
+      <nav className={classes.tabs} aria-label="Разделы">
+        {links('tab')}
+      </nav>
     </Box>
+  );
+}
+
+/** Кнопка в стиле пункта меню — для страниц, где нужна ссылка «назад». */
+export function BackLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <UnstyledButton component={Link} href={href} className={classes.back}>
+      ← {children}
+    </UnstyledButton>
   );
 }

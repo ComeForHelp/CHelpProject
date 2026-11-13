@@ -1,0 +1,11 @@
+/* Вариант роли — карточка с радиокнопкой, выбранная подсвечивается оранжевым (как в макете) */
+.option {
+  border: 1px solid var(--mantine-color-ink-2);
+  transition: border-color 120ms, background-color 120ms;
+
+  &[data-checked] {
+    border-color: var(--mantine-color-brand-6);
+    background: var(--mantine-color-brand-0);
+    box-shadow: inset 0 0 0 1px var(--mantine-color-brand-6);
+  }
+}

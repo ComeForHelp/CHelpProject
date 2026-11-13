@@ -1,33 +1,163 @@
+/* Каркас кабинета по макету idu_help_refined: шапка 64px, меню слева 248px, на телефоне — вкладки внизу */
+
 .root {
   min-height: 100vh;
+  background: #fff;
 }
 
 .header {
-  background: var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-3);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  height: 4rem;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: #fff;
+  border-bottom: 1px solid var(--mantine-color-ink-2);
 }
 
-.logo {
-  font-size: 1.35rem;
-  font-weight: 800;
-  color: var(--mantine-color-blue-8);
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--mantine-color-brand-0);
+  color: var(--mantine-color-brand-7);
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  min-height: calc(100vh - 4rem);
+}
+
+/* Фон и граница — на всю высоту колонки; содержимое меню прилипает при прокрутке */
+.side {
+  background: var(--mantine-color-ink-0);
+  border-right: 1px solid var(--mantine-color-ink-2);
+}
+
+.sideInner {
+  position: sticky;
+  top: 4rem;
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+  padding: 16px 12px;
+}
+
+/* Пункт меню: иконка + подпись, высота от 48px (ТЗ), активный — светло-оранжевый */
+.sideLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 3rem;
+  padding: 0 12px;
+  border-radius: 10px;
+  color: var(--mantine-color-ink-8);
   text-decoration: none;
+  font-weight: 500;
+
+  &:hover {
+    background: var(--mantine-color-brand-0);
+  }
+
+  &[data-active] {
+    background: var(--mantine-color-brand-1);
+    color: var(--mantine-color-brand-8);
+    font-weight: 700;
+  }
 }
 
 .main {
-  padding-bottom: 4rem;
+  padding: 32px 32px 64px;
 }
 
-/* Меню всегда видно (никаких скрытых меню): на телефоне — сетка в две колонки, на компьютере — в строку */
-.nav {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--mantine-spacing-xs);
+.content {
+  margin: 0 auto;
+  max-width: 860px;
 }
 
-@media (min-width: $mantine-breakpoint-sm) {
-  .nav {
+.main[data-size='sm'] .content {
+  max-width: 640px;
+}
+.main[data-size='lg'] .content {
+  max-width: 1080px;
+}
+.main[data-size='xl'] .content {
+  max-width: 1320px;
+}
+
+.tabs {
+  display: none;
+}
+
+.back {
+  color: var(--mantine-color-brand-7);
+  font-weight: 600;
+}
+
+/* Телефон и планшет: меню слева прячется, появляются вкладки внизу (всегда видны) */
+@media (max-width: 61.99em) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .side {
+    display: none;
+  }
+
+  .main {
+    padding: 20px 16px calc(6.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .tabs {
     display: flex;
-    flex-wrap: wrap;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+    background: #fff;
+    border-top: 1px solid var(--mantine-color-ink-2);
+  }
+
+  .tabLink {
+    flex: 1 1 0;
+    min-width: 4.2rem;
+    min-height: 3.6rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 4px;
+    border-radius: 10px;
+    color: var(--mantine-color-ink-8);
+    text-decoration: none;
+    font-size: 0.72rem;
+    font-weight: 500;
+    line-height: 1.15;
+    text-align: center;
+
+    &[data-active] {
+      background: var(--mantine-color-brand-1);
+      color: var(--mantine-color-brand-8);
+      font-weight: 700;
+    }
+  }
+
+  .userChip {
+    display: none;
+  }
+}
+
+/* Узкий телефон: «Выйти» без подписи не прячем — сокращаем отступы */
+@media (max-width: 30em) {
+  .logout {
+    padding-inline: 10px;
   }
 }

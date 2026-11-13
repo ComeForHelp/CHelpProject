@@ -10,6 +10,7 @@ import {
   Group,
   Loader,
   Paper,
+  type PaperProps,
   Progress,
   SegmentedControl,
   Stack,
@@ -19,12 +20,12 @@ import {
   VisuallyHidden,
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
-import { IconAlertTriangle, IconInbox, IconPhone } from '@tabler/icons-react';
+import { IconAlertTriangle, IconHeartFilled, IconInbox, IconPhone } from '@tabler/icons-react';
 import Link from 'next/link';
-import type { ComponentProps, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { getErrorMessage } from '../api/errors';
 import type { TaskStatus } from '../api/types';
-import { TASK_STATUS } from '../config/dictionaries';
+import { TASK_STATUS, TONE, type Tone } from '../config/dictionaries';
 import { formatPhone } from '../lib/format';
 import { FONT_SIZES, type FontSize, useUiPrefs } from '../model/ui-prefs';
 import classes from './ui.module.css';
@@ -113,7 +114,30 @@ export function StepIndicator({
   );
 }
 
-/** Статус заявки словами. Текст тёмного оттенка — контраст не ниже 4,5:1. */
+/** «Пилюля» с точкой по макету: светлый фон тона, тёмный текст. */
+export function Pill({
+  tone,
+  children,
+  size = 'lg',
+}: {
+  tone: Tone;
+  children: ReactNode;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+}) {
+  const t = TONE[tone];
+  return (
+    <Badge
+      size={size}
+      radius="xl"
+      leftSection={<span className={classes.dot} aria-hidden />}
+      styles={{ root: { background: t.bg, color: t.fg, border: 0 } }}
+    >
+      {children}
+    </Badge>
+  );
+}
+
+/** Статус заявки словами, цвет — по смыслу (ждёт / в работе / выполнена / отменена). */
 export function StatusBadge({
   status,
   size = 'lg',
@@ -123,9 +147,9 @@ export function StatusBadge({
 }) {
   const s = TASK_STATUS[status];
   return (
-    <Badge color={s.color} c={`${s.color}.9`} variant="light" size={size}>
+    <Pill tone={s.tone} size={size}>
       {s.label}
-    </Badge>
+    </Pill>
   );
 }
 
@@ -291,14 +315,14 @@ export function LinkCard({
   href,
   children,
   ...props
-}: { href: string; children: ReactNode } & ComponentProps<typeof Paper>) {
+}: { href: string; children: ReactNode } & Omit<PaperProps, 'children'>) {
   return (
     <Paper
       component={Link}
       href={href}
       withBorder
       p="md"
-      radius="md"
+      radius="lg"
       className={classes.linkCard}
       {...props}
     >
@@ -318,5 +342,25 @@ export function InfoRow({ label, children }: { label: string; children: ReactNod
         {children}
       </Text>
     </Group>
+  );
+}
+
+/** Логотип макета: оранжевый квадрат с сердцем и название. */
+export function Logo({ href = '/', light }: { href?: string; light?: boolean }) {
+  return (
+    <Link
+      href={href}
+      className={classes.logo}
+      data-light={light || undefined}
+      aria-label="Иду на помощь! — на главную"
+    >
+      <span className={classes.logoMark} aria-hidden>
+        <IconHeartFilled size={20} />
+      </span>
+      {/* На узком телефоне остаётся только знак — иначе шапка шире экрана */}
+      <span className={classes.logoText} aria-hidden>
+        Иду на помощь!
+      </span>
+    </Link>
   );
 }
