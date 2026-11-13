@@ -1,0 +1,96 @@
+.tile {
+  display: block;
+  width: 100%;
+  min-height: 8rem;
+  padding: var(--mantine-spacing-md);
+  border: 1px solid var(--mantine-color-ink-2);
+  border-radius: var(--mantine-radius-lg);
+  background: var(--mantine-color-white);
+  transition: border-color 120ms, background-color 120ms;
+
+  &:hover {
+    border-color: var(--mantine-color-brand-6);
+    background: var(--mantine-color-brand-0);
+  }
+
+  &[data-selected] {
+    border-color: var(--mantine-color-brand-6);
+    background: var(--mantine-color-brand-0);
+    box-shadow: inset 0 0 0 1px var(--mantine-color-brand-6);
+  }
+
+  &:focus-visible {
+    outline: 3px solid #1d5f99;
+    outline-offset: 2px;
+  }
+}
+
+/* Иконка в светло-оранжевом квадрате, как в карточках макета */
+.tileIcon {
+  display: grid;
+  place-items: center;
+  width: 3.4rem;
+  height: 3.4rem;
+  border-radius: 12px;
+  background: var(--mantine-color-brand-0);
+  color: var(--mantine-color-brand-7);
+}
+
+.linkCard {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 120ms, box-shadow 120ms;
+
+  &:hover {
+    border-color: var(--mantine-color-brand-6);
+  }
+
+  &:focus-visible {
+    outline: 3px solid #1d5f99;
+    outline-offset: 2px;
+  }
+}
+
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Логотип макета: оранжевый квадрат с сердцем */
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-montserrat), Montserrat, sans-serif;
+  font-weight: 900;
+  font-size: 1.05rem;
+  color: var(--mantine-color-ink-8);
+  text-decoration: none;
+  white-space: nowrap;
+
+  &[data-light] {
+    color: #fff;
+  }
+}
+
+.logoMark {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--mantine-color-brand-6);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+/* Телефон до 480px: в шапке кабинета рядом с логотипом ещё «Уведомления» и «Выйти» */
+@media (max-width: 30em) {
+  .logo:not([data-light]) .logoText {
+    display: none;
+  }
+}

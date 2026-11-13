@@ -1,0 +1,139 @@
+.root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+
+  & > main {
+    flex: 1;
+  }
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  height: 4.4rem;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: #fff;
+  border-bottom: 1px solid var(--mantine-color-ink-2);
+}
+
+.navLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 3rem;
+  padding: 0 14px;
+  border-radius: 10px;
+  color: var(--mantine-color-ink-8);
+  text-decoration: none;
+  font-weight: 500;
+
+  &:hover {
+    background: var(--mantine-color-ink-0);
+  }
+}
+
+.footer {
+  background: #29231f;
+  color: #dce4e0;
+  padding: 56px 0 32px;
+}
+
+.footLink {
+  color: #dce4e0;
+  text-decoration: underline;
+}
+
+/* Главная */
+.hero {
+  padding: 72px 0 64px;
+  background: var(--mantine-color-ink-0);
+}
+
+.section {
+  padding: 72px 0;
+}
+
+.alt {
+  background: var(--mantine-color-ink-0);
+}
+
+.card {
+  height: 100%;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid var(--mantine-color-ink-2);
+  border-radius: 14px;
+}
+
+.iconBox {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--mantine-color-brand-0);
+  color: var(--mantine-color-brand-7);
+  display: grid;
+  place-items: center;
+  margin-bottom: 16px;
+}
+
+.step {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: var(--mantine-color-brand-0);
+  color: var(--mantine-color-brand-7);
+
+  &[data-done] {
+    background: var(--mantine-color-brand-6);
+    color: #fff;
+  }
+}
+
+.cta {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 32px;
+  align-items: center;
+  padding: 48px;
+  border-radius: 20px;
+  background: var(--mantine-color-brand-6);
+  color: #fff;
+}
+
+@media (max-width: 47.99em) {
+  .hero {
+    padding: 40px 0;
+  }
+  .section {
+    padding: 48px 0;
+  }
+  .cta {
+    grid-template-columns: 1fr;
+    padding: 28px 24px;
+  }
+}
+
+/* Выбор роли — карточки-варианты */
+.option {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 20px;
+  border: 1px solid var(--mantine-color-ink-2);
+  border-radius: 14px;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 120ms, background-color 120ms;
+
+  &:hover {
+    border-color: var(--mantine-color-brand-6);
+    background: var(--mantine-color-brand-0);
+  }
+}

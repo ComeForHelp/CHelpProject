@@ -1,0 +1,50 @@
+/* Базовый шрифт 18 px (требование ТЗ); переключатель меняет его на 20 или 22 px. */
+html {
+  font-size: 18px;
+  scroll-padding-top: 6rem;
+}
+
+body {
+  background: #ffffff;
+  color: #29231f;
+  line-height: 1.55;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Ссылки по макету: тёмно-оранжевые, с подчёркиванием */
+a:not([class]) {
+  color: var(--mantine-color-brand-7);
+}
+
+/* Ссылка «перейти к содержимому» для клавиатуры и экранных дикторов */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 1000;
+  padding: 0.75rem 1rem;
+  background: var(--mantine-color-brand-6);
+  color: #fff;
+  font-weight: 700;
+  border-radius: 0 0 10px 0;
+}
+.skip-link:focus {
+  left: 0;
+}
+
+/* Рамка фокуса по макету — синяя, заметная на оранжевом и белом */
+:focus-visible {
+  outline: 3px solid #1d5f99;
+  outline-offset: 2px;
+}
+
+/* Без анимаций для тех, кто их отключил */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
