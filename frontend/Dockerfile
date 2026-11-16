@@ -7,6 +7,9 @@ COPY . .
 # Адрес API вшивается в клиентский код при сборке
 ARG NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+# Плашка «Тестовый стенд» сверху страницы; пусто — плашки нет
+ARG NEXT_PUBLIC_STAND_LABEL=
+ENV NEXT_PUBLIC_STAND_LABEL=$NEXT_PUBLIC_STAND_LABEL
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 

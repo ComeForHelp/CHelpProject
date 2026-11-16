@@ -1,0 +1,89 @@
+# Тестовый стенд / сервер. Пошагово — docs/deploy.md.
+#
+#   cp .env.prod.example .env    # заполнить домен, пароль БД, секреты
+#   docker compose -f docker-compose.prod.yml up -d --build
+#   docker compose -f docker-compose.prod.yml exec backend npx prisma db seed
+#
+# Наружу открыт только Caddy (80/443): он получает HTTPS-сертификат и отдаёт
+#   https://ДОМЕН/       → frontend
+#   https://ДОМЕН/api/…  → backend
+# PostgreSQL, backend и frontend из интернета недоступны.
+
+name: idu-help
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: idu
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Задайте POSTGRES_PASSWORD в .env}
+      POSTGRES_DB: idu_na_pomoshch
+      TZ: UTC
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U idu -d idu_na_pomoshch']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://idu:${POSTGRES_PASSWORD}@postgres:5432/idu_na_pomoshch?schema=public
+      PORT: 3001
+      CORS_ORIGIN: https://${DOMAIN:?Задайте DOMAIN в .env}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Задайте JWT_ACCESS_SECRET в .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Задайте JWT_REFRESH_SECRET в .env}
+      JWT_ACCESS_TTL: 15m
+      JWT_REFRESH_TTL_DAYS: 30
+      APP_UTC_OFFSET_HOURS: 10
+      RECURRING_HORIZON_DAYS: 3
+      UPLOAD_DIR: /app/uploads
+      UPLOAD_MAX_MB: 10
+      CRON_ENABLED: 'true'
+      # Перед backend стоит один прокси (Caddy) — лимиты считаются по IP посетителя
+      TRUST_PROXY: 1
+      THROTTLE_ENABLED: 'true'
+      SEED_DEMO: ${SEED_DEMO:-true}
+    volumes:
+      - uploads:/app/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Тот же домен, что у сайта: браузер ходит в API через Caddy, CORS не нужен
+        NEXT_PUBLIC_API_URL: https://${DOMAIN}/api/v1
+        NEXT_PUBLIC_STAND_LABEL: ${STAND_LABEL:-}
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on:
+      - frontend
+      - backend
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pgdata:
+  uploads:
+  caddy_data:
+  caddy_config:

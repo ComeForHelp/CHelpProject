@@ -5,6 +5,7 @@ import { ColorSchemeScript, mantineHtmlProps } from '@mantine/core';
 import type { Metadata, Viewport } from 'next';
 import { Inter, Montserrat } from 'next/font/google';
 import type { ReactNode } from 'react';
+import { STAND_LABEL } from '@/shared/config/env';
 import { Providers } from './providers';
 
 /** Шрифты макета. next/font скачивает их при сборке и раздаёт сам — без запросов к Google из браузера. */
@@ -50,6 +51,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <a href="#main" className="skip-link">
           Перейти к содержимому
         </a>
+        {STAND_LABEL && (
+          <div role="note" className="stand-banner">
+            {STAND_LABEL}
+          </div>
+        )}
         <Providers>{children}</Providers>
       </body>
     </html>
