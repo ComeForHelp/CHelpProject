@@ -1,0 +1,67 @@
+name: Ошибка на сайте
+description: Что-то работает не так, как ожидалось
+title: '[Баг] '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Спасибо, что тестируете! Не вставляйте настоящие имена, телефоны и адреса — репозиторий публичный.
+  - type: dropdown
+    id: role
+    attributes:
+      label: Под какой ролью
+      options:
+        - Получатель (+79000000003)
+        - Родственник (+79000000004)
+        - Волонтёр (+79000000005)
+        - Координатор (+79000000002)
+        - Без входа (главная, регистрация)
+        - Другое
+    validations:
+      required: true
+  - type: input
+    id: page
+    attributes:
+      label: Страница
+      description: Скопируйте адрес из браузера
+      placeholder: https://…/my/tasks/new
+  - type: textarea
+    id: steps
+    attributes:
+      label: Что делали
+      description: По шагам, чтобы можно было повторить
+      placeholder: |
+        1. Нажала «Нужна помощь»
+        2. Выбрала «Продукты»
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Что ожидали
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Что получилось
+      description: Текст ошибки, если был. Скриншот можно перетащить прямо сюда
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Устройство и браузер
+      placeholder: iPhone 12, Safari / Windows, Chrome
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Насколько мешает
+      options:
+        - Не могу продолжить
+        - Мешает, но можно обойти
+        - Мелочь (текст, вид)

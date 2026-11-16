@@ -48,3 +48,14 @@ a:not([class]) {
     scroll-behavior: auto !important;
   }
 }
+
+/* Плашка тестового стенда (NEXT_PUBLIC_STAND_LABEL). Контраст #7A5000 на #FFF4DB — 6,4:1 */
+.stand-banner {
+  background: #fff4db;
+  color: #7a5000;
+  border-bottom: 1px solid #f0d9a8;
+  padding: 0.5rem 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+}

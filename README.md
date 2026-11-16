@@ -67,6 +67,14 @@ docker compose exec backend npx prisma db seed     # районы, катего�
 | +79000000005 | волонтёр, проверен (Ленинский, Фрунзенский) |
 | +79000000006 | волонтёр на проверке |
 
+## Сервер и тестовый стенд
+
+На VPS — [`docker-compose.prod.yml`](docker-compose.prod.yml): Caddy с автоматическим HTTPS, наружу только порты 80/443,
+пароли и секреты из `.env`, плашка «Тестовый стенд» сверху страниц.
+
+- Пошагово: [docs/deploy.md](docs/deploy.md)
+- Памятка для тестировщиков (входы, сценарии, как сообщить об ошибке): [docs/testing.md](docs/testing.md)
+
 ## Запуск backend без Docker
 
 Нужны Node.js 22 и PostgreSQL.
