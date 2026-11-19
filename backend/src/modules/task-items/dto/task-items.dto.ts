@@ -15,4 +15,11 @@ export class UpdateTaskItemDto extends PartialType(CreateTaskItemDto) {
   @IsOptional()
   @IsBoolean()
   isChecked?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Отметка «нет в наличии». true снимает «куплено», и наоборот',
+  })
+  @IsOptional()
+  @IsBoolean()
+  isUnavailable?: boolean;
 }

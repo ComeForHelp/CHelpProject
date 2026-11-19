@@ -191,6 +191,8 @@ function useUrlFilters() {
     from: get('from') ? localToIso(get('from')!, '00:00') : undefined,
     to: get('to') ? localToIso(addDaysYmd(get('to')!, 1), '00:00') : undefined,
     page: get('page') ? Number(get('page')) : 1,
+    // По умолчанию сначала новые; «по времени» — срочные и ближайшие по окну выполнения
+    sort: get('sort') === 'window' ? 'windowStart' : 'createdAt',
   };
   const set = (patch: Record<string, string | undefined>) => {
     const next = new URLSearchParams(params.toString());
@@ -274,6 +276,17 @@ export function TasksTable() {
             value={raw('to') ?? ''}
             onChange={(e) => set({ to: e.currentTarget.value || undefined })}
           />
+          <Select
+            size="md"
+            label="Порядок"
+            allowDeselect={false}
+            data={[
+              { value: 'new', label: 'Сначала новые' },
+              { value: 'window', label: 'Сначала срочные и ближайшие' },
+            ]}
+            value={raw('sort') === 'window' ? 'window' : 'new'}
+            onChange={(v) => set({ sort: v === 'window' ? 'window' : undefined })}
+          />
           <Stack gap={6} justify="flex-end">
             <Switch
               label="Только срочные"
@@ -302,6 +315,7 @@ export function TasksTable() {
                   q: undefined,
                   from: undefined,
                   to: undefined,
+                  sort: undefined,
                 });
               }}
             >
@@ -612,41 +626,50 @@ function BarTable({
   const sorted = [...rows].sort((a, b) => b.value - a.value);
   const max = Math.max(1, ...sorted.map((r) => r.value));
   return (
-    <Table verticalSpacing={6} fz="md" className={classes.barTable}>
-      <caption className={classes.caption}>{caption}</caption>
-      <Table.Thead>
-        <Table.Tr>
-          <Table.Th scope="col">Название</Table.Th>
-          <Table.Th scope="col" w="45%">
-            <VisuallyHidden>Доля</VisuallyHidden>
-          </Table.Th>
-          <Table.Th scope="col" ta="right">
-            {valueLabel}
-          </Table.Th>
-        </Table.Tr>
-      </Table.Thead>
-      <Table.Tbody>
-        {sorted.map((r) => (
-          <Table.Tr key={r.label} title={`${r.label}: ${r.value}${r.extra ? `, ${r.extra}` : ''}`}>
-            <Table.Td>{r.label}</Table.Td>
-            <Table.Td aria-hidden>
-              {r.value > 0 && (
-                <Box className={classes.bar} style={{ width: `${(r.value / max) * 100}%` }} />
-              )}
-            </Table.Td>
-            <Table.Td ta="right" className={classes.num}>
-              {r.value}
-              {r.extra && (
-                <Text span c="dimmed" size="sm">
-                  {' '}
-                  · {r.extra}
-                </Text>
-              )}
-            </Table.Td>
+    <Table.ScrollContainer minWidth={280} type="native">
+      <Table verticalSpacing={6} fz="md" className={classes.barTable}>
+        <caption className={classes.caption}>{caption}</caption>
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th scope="col">Название</Table.Th>
+            <Table.Th scope="col" w="45%">
+              <VisuallyHidden>Доля</VisuallyHidden>
+            </Table.Th>
+            <Table.Th scope="col" ta="right">
+              {valueLabel}
+            </Table.Th>
           </Table.Tr>
-        ))}
-      </Table.Tbody>
-    </Table>
+        </Table.Thead>
+        <Table.Tbody>
+          {sorted.map((r) => (
+            <Table.Tr
+              key={r.label}
+              title={`${r.label}: ${r.value}${r.extra ? `, ${r.extra}` : ''}`}
+            >
+              <Table.Td>{r.label}</Table.Td>
+              <Table.Td aria-hidden>
+                {r.value > 0 && (
+                  <Box
+                    className={classes.bar}
+                    data-a11y-fill
+                    style={{ width: `${(r.value / max) * 100}%` }}
+                  />
+                )}
+              </Table.Td>
+              <Table.Td ta="right" className={classes.num}>
+                {r.value}
+                {r.extra && (
+                  <Text span c="dimmed" size="sm">
+                    {' '}
+                    · {r.extra}
+                  </Text>
+                )}
+              </Table.Td>
+            </Table.Tr>
+          ))}
+        </Table.Tbody>
+      </Table>
+    </Table.ScrollContainer>
   );
 }
 
@@ -777,33 +800,35 @@ export function ReportsPanel() {
                   />
                 </Paper>
                 <Paper withBorder p="md" radius="md">
-                  <Table verticalSpacing={6} fz="md">
-                    <caption className={classes.caption}>Пользователи</caption>
-                    <Table.Thead>
-                      <Table.Tr>
-                        <Table.Th scope="col">Роль</Table.Th>
-                        <Table.Th scope="col" ta="right">
-                          Всего активных
-                        </Table.Th>
-                        <Table.Th scope="col" ta="right">
-                          Новых за период
-                        </Table.Th>
-                      </Table.Tr>
-                    </Table.Thead>
-                    <Table.Tbody>
-                      {(Object.keys(r.users.activeByRole) as Role[]).map((role) => (
-                        <Table.Tr key={role}>
-                          <Table.Td>{ROLE_LABEL[role]}</Table.Td>
-                          <Table.Td ta="right" className={classes.num}>
-                            {r.users.activeByRole[role]}
-                          </Table.Td>
-                          <Table.Td ta="right" className={classes.num}>
-                            {r.users.newByRole[role]}
-                          </Table.Td>
+                  <Table.ScrollContainer minWidth={280} type="native">
+                    <Table verticalSpacing={6} fz="md">
+                      <caption className={classes.caption}>Пользователи</caption>
+                      <Table.Thead>
+                        <Table.Tr>
+                          <Table.Th scope="col">Роль</Table.Th>
+                          <Table.Th scope="col" ta="right">
+                            Всего активных
+                          </Table.Th>
+                          <Table.Th scope="col" ta="right">
+                            Новых за период
+                          </Table.Th>
                         </Table.Tr>
-                      ))}
-                    </Table.Tbody>
-                  </Table>
+                      </Table.Thead>
+                      <Table.Tbody>
+                        {(Object.keys(r.users.activeByRole) as Role[]).map((role) => (
+                          <Table.Tr key={role}>
+                            <Table.Td>{ROLE_LABEL[role]}</Table.Td>
+                            <Table.Td ta="right" className={classes.num}>
+                              {r.users.activeByRole[role]}
+                            </Table.Td>
+                            <Table.Td ta="right" className={classes.num}>
+                              {r.users.newByRole[role]}
+                            </Table.Td>
+                          </Table.Tr>
+                        ))}
+                      </Table.Tbody>
+                    </Table>
+                  </Table.ScrollContainer>
                   <Text size="sm" c="dimmed" mt="sm">
                     Проверенных волонтёров: {r.users.volunteersVerified}, брали заявки за период:{' '}
                     {r.users.volunteersActiveInPeriod}

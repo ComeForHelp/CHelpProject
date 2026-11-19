@@ -61,6 +61,8 @@ services:
         # Тот же домен, что у сайта: браузер ходит в API через Caddy, CORS не нужен
         NEXT_PUBLIC_API_URL: https://${DOMAIN}/api/v1
         NEXT_PUBLIC_STAND_LABEL: ${STAND_LABEL:-}
+        # Телефон координатора для «Забыли пароль?» и подвала сайта
+        NEXT_PUBLIC_SUPPORT_PHONE: ${SUPPORT_PHONE:-}
     restart: unless-stopped
     depends_on:
       - backend

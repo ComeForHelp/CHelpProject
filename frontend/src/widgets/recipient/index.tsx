@@ -10,9 +10,9 @@ import { TaskCard, type TaskCardData, useMyTasks } from '@/entities/task';
 import { RecurringRuleControls, describeSchedule } from '@/features/recurring';
 import { RepeatTask } from '@/features/task-actions';
 import { dayLabel } from '@/shared/lib/date';
-import { BigButton, EmptyState, LinkCard, QueryState, StatusBadge } from '@/shared/ui';
+import { BigButton, EmptyState, LinkCard, Pill, QueryState, StatusBadge } from '@/shared/ui';
 
-/** ActiveTasksList — заявки, которые ещё не закрыты. Обновляется раз в 30 с. */
+/** ActiveTasksList — заявки, которые ещё не закрыты. Обновляется раз в 15 с. */
 export function ActiveTasksList({
   recipientId,
   basePath,
@@ -53,7 +53,7 @@ export function ActiveTasksList({
 function RecentRow({ task, href }: { task: TaskCardData; href: string }) {
   return (
     <LinkCard href={href} p="md">
-      <Group justify="space-between" wrap="nowrap" gap="sm">
+      <Group justify="space-between" wrap="wrap" gap="sm">
         <Text>
           {new Date(task.windowStart).toLocaleDateString('ru-RU', {
             day: '2-digit',
@@ -255,11 +255,20 @@ export function RecurringList({
                               Следующая: {dayLabel(r.nextDates[0]).toLowerCase()}
                             </Text>
                           )}
-                          {r.preferredVolunteer && (
+                          {r.preferredVolunteer ? (
                             <Text c="dimmed">
                               Постоянный волонтёр: {r.preferredVolunteer.firstName}{' '}
                               {r.preferredVolunteer.lastName}
                             </Text>
+                          ) : (
+                            <Group gap={6} wrap="wrap">
+                              <Pill tone="neutral" size="md">
+                                Волонтёр ещё не назначен
+                              </Pill>
+                              <Text c="dimmed" size="sm">
+                                заявку возьмёт любой свободный волонтёр
+                              </Text>
+                            </Group>
                           )}
                         </Stack>
                       </Group>

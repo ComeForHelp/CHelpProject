@@ -21,7 +21,8 @@ const NAV = [
   { href: '/my/history', label: 'История', icon: <IconHistory size={20} aria-hidden /> },
   {
     href: '/my/recurring',
-    label: 'Регулярные',
+    // Мягкий перенос: на узком телефоне вкладка переносится как «Регуляр-ные», а не где придётся
+    label: 'Регуляр\u00ADные',
     icon: <IconCalendarRepeat size={20} aria-hidden />,
   },
   { href: '/my/profile', label: 'Профиль', icon: <IconUser size={20} aria-hidden /> },

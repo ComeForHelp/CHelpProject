@@ -7,10 +7,18 @@ import {
   IsString,
   IsUUID,
   Length,
+  Matches,
   Max,
   MaxLength,
   Min,
 } from 'class-validator';
+import {
+  ADDRESS_MESSAGES,
+  APARTMENT_RE,
+  ENTRANCE_RE,
+  HOUSE_RE,
+  STREET_RE,
+} from '../../../common/utils/address-rules';
 import { trim } from '../../../common/utils/transform';
 
 export class AddressFieldsDto {
@@ -27,11 +35,31 @@ export class AddressFieldsDto {
   @Transform(trim)
   @IsString()
   @Length(1, 200)
+  @Matches(STREET_RE, { message: ADDRESS_MESSAGES.street })
   street: string;
 
-  @ApiProperty({ example: '45' }) @Transform(trim) @IsString() @Length(1, 20) house: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(20) apartment?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(10) entrance?: string;
+  @ApiProperty({ example: '45' })
+  @Transform(trim)
+  @IsString()
+  @Length(1, 20)
+  @Matches(HOUSE_RE, { message: ADDRESS_MESSAGES.house })
+  house: string;
+
+  @ApiPropertyOptional({ example: '12' })
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(20)
+  @Matches(APARTMENT_RE, { message: ADDRESS_MESSAGES.apartment })
+  apartment?: string;
+
+  @ApiPropertyOptional({ example: '2' })
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(10)
+  @Matches(ENTRANCE_RE, { message: ADDRESS_MESSAGES.entrance })
+  entrance?: string;
 
   @ApiPropertyOptional({ example: 5 })
   @IsOptional()

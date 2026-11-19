@@ -79,7 +79,7 @@ export function AppLayout({
           <Group gap="xs" wrap="nowrap">
             {hydrated && user && <NotificationsButton taskHref={taskHref} />}
             {hydrated && user && (
-              <Group gap={8} wrap="nowrap" className={classes.userChip}>
+              <Group gap={8} wrap="nowrap" className={`${classes.userChip} hide-in-narrow-header`}>
                 <span className={classes.avatar} aria-hidden>
                   <IconUser size={18} />
                 </span>
@@ -94,8 +94,9 @@ export function AppLayout({
               onClick={logout}
               leftSection={<IconLogout size={18} aria-hidden />}
               className={classes.logout}
+              aria-label="Выйти"
             >
-              Выйти
+              <span className="hide-in-tiny-header">Выйти</span>
             </Button>
           </Group>
         </Group>

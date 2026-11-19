@@ -16,7 +16,7 @@ export default function CoordDashboardPage() {
     <Stack gap="lg">
       <PageHeader
         title="Обзор"
-        description="Обновляется каждые 30 секунд. Нажмите на карточку, чтобы открыть список"
+        description="Обновляется каждые 15 секунд. Нажмите на карточку, чтобы открыть список"
       />
       <StatCards />
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">

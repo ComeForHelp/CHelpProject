@@ -131,7 +131,7 @@ const url = URL.createObjectURL(data); // в <img src>; не забыть URL.re
 
 ### Обновление статусов
 
-Веб-сокетов в MVP нет. Опрашивайте раз в 30 секунд (`refetchInterval: 30_000` в TanStack Query):
+Веб-сокетов в MVP нет. Опрашивайте раз в 10–15 секунд (`refetchInterval` в TanStack Query: карточка заявки — 10 с, списки — 15 с):
 - `GET /notifications/unread-count` — значок в шапке;
 - открытую заявку `GET /tasks/{id}` и списки активных заявок.
 

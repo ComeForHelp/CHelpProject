@@ -2,7 +2,7 @@
 
 import { Alert, Button, Group, Paper, Stack, Text, Title } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconArrowLeft, IconArrowRight, IconSend } from '@tabler/icons-react';
+import { IconArrowLeft, IconArrowRight, IconListCheck, IconSend } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -12,12 +12,14 @@ import { taskKeys } from '@/entities/task';
 import { api } from '@/shared/api/client';
 import { getErrorMessage } from '@/shared/api/errors';
 import type { S } from '@/shared/api/types';
+import { useActionLock } from '@/shared/api/use-guarded-mutation';
 import { ErrorBlock, LoadingBlock, StepIndicator, confirmAction } from '@/shared/ui';
 import {
   STEP_TITLES,
   type StepId,
   draftToPayload,
   emptyDraft,
+  firstInvalidStep,
   stepsFor,
   useTaskDrafts,
   validateStep,
@@ -56,6 +58,8 @@ function useTaskForm(recipientId: string | undefined, basePath: string) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Двойное «Отправить» не должно создать две заявки
+  const lock = useActionLock();
 
   const update = (patch: Partial<typeof draft>) => {
     setError(null);
@@ -72,11 +76,13 @@ function useTaskForm(recipientId: string | undefined, basePath: string) {
   }, [addresses.data, draft.addressId, key, updateDraft]);
 
   const submit = async () => {
+    if (!lock.acquire()) return;
     for (const step of steps) {
-      const msg = validateStep(step, draft);
+      const msg = validateStep(step, draft, new Date(), category);
       if (msg) {
         setError(msg);
         update({ step: steps.indexOf(step) });
+        lock.release();
         return;
       }
     }
@@ -93,9 +99,11 @@ function useTaskForm(recipientId: string | undefined, basePath: string) {
         title: 'Заявка отправлена',
         message: 'Как только волонтёр её возьмёт, вы увидите это здесь.',
       });
+      // Замок не снимаем: страница уходит на карточку новой заявки
       router.push(`${basePath}/tasks/${data.id}`);
     } catch (e) {
       setError(getErrorMessage(e));
+      lock.release();
     } finally {
       setSubmitting(false);
     }
@@ -137,16 +145,28 @@ export function TaskWizard({ recipientId, basePath }: { recipientId?: string; ba
     return <ErrorBlock error={f.categories.error} onRetry={() => f.categories.refetch()} />;
   const categories = f.categories.data ?? [];
 
-  const goTo = (i: number) => {
+  const reviewIndex = f.steps.indexOf('review');
+  const goTo = (i: number, patch: Partial<typeof f.draft> = {}) => {
     f.setError(null);
-    f.update({ step: Math.max(0, Math.min(i, f.steps.length - 1)) });
+    f.update({ step: Math.max(0, Math.min(i, f.steps.length - 1)), ...patch });
+  };
+  /**
+   * После «Изменить» из проверки не нужно прокликивать все шаги заново:
+   * сразу обратно к проверке, а если смена категории добавила незаполненный шаг — на него.
+   */
+  const backToReview = () => {
+    const missing = firstInvalidStep(f.steps, f.draft, f.category);
+    if (missing !== -1 && missing !== stepIndex) return goTo(missing);
+    goTo(reviewIndex, { returnToReview: false });
   };
   const next = () => {
-    const msg = validateStep(step, f.draft);
+    const msg = validateStep(step, f.draft, new Date(), f.category);
     if (msg) return f.setError(msg);
+    if (f.draft.returnToReview) return backToReview();
     goTo(stepIndex + 1);
   };
   const back = () => (stepIndex === 0 ? router.push(basePath) : goTo(stepIndex - 1));
+  const returning = !!f.draft.returnToReview && step !== 'review';
 
   const props: StepProps = { draft: f.draft, update: f.update, categories, recipientId };
 
@@ -156,8 +176,13 @@ export function TaskWizard({ recipientId, basePath }: { recipientId?: string; ba
         <StepIndicator step={stepIndex + 1} total={f.steps.length} title={STEP_TITLES[step]} />
       </div>
 
-      {step === 'category' && <CategoryStep {...props} onPicked={() => goTo(1)} />}
-      {step === 'review' && <ReviewStep {...props} goTo={(s) => goTo(f.steps.indexOf(s))} />}
+      {step === 'category' && (
+        // После смены категории всегда к подробностям: у новой категории может быть свой список
+        <CategoryStep {...props} onPicked={() => goTo(1)} />
+      )}
+      {step === 'review' && (
+        <ReviewStep {...props} goTo={(s) => goTo(f.steps.indexOf(s), { returnToReview: true })} />
+      )}
       {step !== 'category' &&
         step !== 'review' &&
         (() => {
@@ -192,11 +217,16 @@ export function TaskWizard({ recipientId, basePath }: { recipientId?: string; ba
             Отправить заявку
           </Button>
         ) : (
-          step !== 'category' && (
+          step !== 'category' &&
+          (returning ? (
+            <Button size="xl" rightSection={<IconListCheck aria-hidden />} onClick={next}>
+              Готово, к проверке
+            </Button>
+          ) : (
             <Button size="xl" rightSection={<IconArrowRight aria-hidden />} onClick={next}>
               Далее
             </Button>
-          )
+          ))
         )}
       </Group>
 

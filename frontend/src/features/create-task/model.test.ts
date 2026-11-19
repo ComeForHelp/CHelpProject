@@ -1,6 +1,13 @@
 import type { S } from '@/shared/api/types';
 import { addDaysYmd, todayYmd } from '@/shared/lib/date';
-import { type TaskDraft, draftToPayload, emptyDraft, stepsFor, validateStep } from './model';
+import {
+  type TaskDraft,
+  draftToPayload,
+  emptyDraft,
+  firstInvalidStep,
+  stepsFor,
+  validateStep,
+} from './model';
 
 const groceries: S['CategoryDto'] = {
   id: 1,
@@ -84,5 +91,27 @@ describe('черновик → запрос POST /tasks', () => {
 
   it('незаполненный черновик не отправляется', () => {
     expect(() => draftToPayload(emptyDraft(), groceries)).toThrow();
+  });
+});
+
+describe('список покупок обязателен для продуктов и лекарств', () => {
+  it('пустой список у продуктов — ошибка на шаге «Подробности»', () => {
+    const d = full({ items: [{ name: '  ', quantity: '' }] });
+    expect(validateStep('details', d, new Date(), groceries)).toMatch(/хотя бы одну покупку/);
+  });
+  it('у сопровождения список не нужен', () => {
+    const d = full({ categoryId: 4, items: [{ name: '', quantity: '' }] });
+    expect(validateStep('details', d, new Date(), escort)).toBeNull();
+  });
+});
+
+describe('firstInvalidStep — куда вернуть после «Изменить»', () => {
+  it('всё заполнено — -1', () => {
+    expect(firstInvalidStep(stepsFor(groceries), full(), groceries)).toBe(-1);
+  });
+  it('пустой список — шаг «Подробности»', () => {
+    const steps = stepsFor(groceries);
+    const d = full({ items: [{ name: '', quantity: '' }] });
+    expect(steps[firstInvalidStep(steps, d, groceries)]).toBe('details');
   });
 });

@@ -11,6 +11,8 @@ import {
 } from '@mantine/core';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { SUPPORT_PHONE } from '@/shared/config/env';
+import { formatPhone } from '@/shared/lib/format';
 import { Logo } from '@/shared/ui';
 import classes from './public-shell.module.css';
 
@@ -35,7 +37,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
               wrap="nowrap"
               component="nav"
               aria-label="Разделы сайта"
-              visibleFrom="md"
+              className="hide-in-medium-header"
             >
               {SECTIONS.map((s) => (
                 <Link key={s.href} href={s.href} className={classes.navLink}>
@@ -83,6 +85,11 @@ export function PublicShell({ children }: { children: ReactNode }) {
               <Title order={4} c="white">
                 Помощь по телефону
               </Title>
+              {SUPPORT_PHONE && (
+                <Anchor href={`tel:${SUPPORT_PHONE}`} className={classes.footLink} fw={700}>
+                  {formatPhone(SUPPORT_PHONE)}
+                </Anchor>
+              )}
               <Text c="#DCE4E0">г. Владивосток</Text>
               <Text c="#DCE4E0">
                 Нет интернета или трудно пользоваться сайтом — координатор примет заявку по

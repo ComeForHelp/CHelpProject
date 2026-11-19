@@ -19,7 +19,7 @@ import {
   Textarea,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -30,6 +30,7 @@ import { type Me, userKeys } from '@/entities/user';
 import { volunteerKeys } from '@/entities/volunteer';
 import { api } from '@/shared/api/client';
 import { getErrorMessage } from '@/shared/api/errors';
+import { useGuardedMutation } from '@/shared/api/use-guarded-mutation';
 import type { ContactPreference, S, VerificationStatus } from '@/shared/api/types';
 import { CONTACT_PREFERENCE } from '@/shared/config/dictionaries';
 import { formatPhone, isValidPhone, phoneInputToApi } from '@/shared/lib/format';
@@ -189,7 +190,7 @@ export function RecipientProfileForm({
   const queryClient = useQueryClient();
   const [notes, setNotes] = useState(mobilityNotes ?? '');
   const [pref, setPref] = useState<ContactPreference>(contactPreference ?? 'CALL');
-  const save = useMutation({
+  const save = useGuardedMutation({
     mutationFn: () =>
       api.patch(recipientId ? `/recipients/${recipientId}` : '/recipients/me', {
         mobilityNotes: notes,
@@ -241,7 +242,7 @@ export function MyRelatives() {
   const [relation, setRelation] = useState('');
   const refresh = () => queryClient.invalidateQueries({ queryKey: relativeKeys.links });
 
-  const confirm = useMutation({
+  const confirm = useGuardedMutation({
     mutationFn: (id: string) => api.post(`/relatives/links/${id}/confirm`),
     onSuccess: () => {
       void refresh();
@@ -249,7 +250,7 @@ export function MyRelatives() {
     },
     onError: fail,
   });
-  const remove = useMutation({
+  const remove = useGuardedMutation({
     mutationFn: (id: string) => api.delete(`/relatives/links/${id}`),
     onSuccess: () => {
       void refresh();
@@ -257,7 +258,7 @@ export function MyRelatives() {
     },
     onError: fail,
   });
-  const invite = useMutation({
+  const invite = useGuardedMutation({
     mutationFn: () =>
       api.post('/relatives/links/invite', {
         relativePhone: phoneInputToApi(phone),
@@ -371,7 +372,7 @@ export function LinkRecipientForm({ onDone }: { onDone: () => void }) {
   const [phone, setPhone] = useState('');
   const [relation, setRelation] = useState('');
   const queryClient = useQueryClient();
-  const request = useMutation({
+  const request = useGuardedMutation({
     mutationFn: () =>
       api.post('/relatives/links/request', {
         recipientPhone: phoneInputToApi(phone),
@@ -636,7 +637,7 @@ export function VolunteerProfileForm({ profile }: { profile: S['VolunteerProfile
   const [ids, setIds] = useState<string[]>(profile.districts.map((d) => String(d.id)));
   const [hasCar, setHasCar] = useState(profile.hasCar);
   const [about, setAbout] = useState(profile.about ?? '');
-  const save = useMutation({
+  const save = useGuardedMutation({
     mutationFn: () =>
       api.patch('/volunteers/me', {
         districtIds: ids.map(Number),
@@ -699,7 +700,7 @@ export function VerifyVolunteerActions({
   const queryClient = useQueryClient();
   const [modal, setModal] = useState<'REJECTED' | 'BLOCKED' | null>(null);
   const [note, setNote] = useState('');
-  const verify = useMutation({
+  const verify = useGuardedMutation({
     mutationFn: (decision: S['VerifyVolunteerDto']['decision']) =>
       api.post(`/volunteers/${volunteerId}/verify`, {
         decision,

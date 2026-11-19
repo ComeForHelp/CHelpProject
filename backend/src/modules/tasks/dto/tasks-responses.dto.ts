@@ -26,6 +26,8 @@ export class TaskItemDto {
   note: string | null;
   /** Отметка «куплено» */
   isChecked: boolean;
+  /** Отметка «нет в наличии» */
+  isUnavailable: boolean;
   position: number;
   createdAt: Date;
 }
@@ -117,8 +119,9 @@ export class TaskVolunteerDto {
   firstName: string;
   lastName: string;
   middleName: string | null;
-  /** Для кнопки «Позвонить» */
-  phone: string;
+  /** Для кнопки «Позвонить». null — заявка закрыта, получателю телефон больше не показываем */
+  @ApiProperty({ type: String, nullable: true })
+  phone: string | null;
   ratingAvg: number | null;
   tasksDone: number | null;
   hasCar: boolean | null;
@@ -200,6 +203,13 @@ export class TaskDetailDto {
 
   @ApiPropertyOptional({ description: 'Только CATALOG: можно нажать «Взять»' })
   canTake?: boolean;
+
+  @ApiProperty({
+    description:
+      'Контакты другой стороны скрыты: каталог или заявка уже закрыта/отменена ' +
+      '(у волонтёра — адрес и телефоны получателя, у получателя — телефон волонтёра)',
+  })
+  contactsHidden: boolean;
 
   @ApiPropertyOptional({
     type: [TaskRelativeContactDto],

@@ -22,8 +22,10 @@ import { z } from 'zod';
 import { api } from '@/shared/api/client';
 import { getErrorMessage } from '@/shared/api/errors';
 import type { S } from '@/shared/api/types';
+import { useActionLock } from '@/shared/api/use-guarded-mutation';
+import { SUPPORT_PHONE } from '@/shared/config/env';
 import { ROLE_HOME } from '@/shared/config/routes';
-import { isValidPhone, phoneInputToApi } from '@/shared/lib/format';
+import { formatPhone, isValidPhone, phoneInputToApi } from '@/shared/lib/format';
 import { useSession } from '@/shared/model/session';
 import classes from './auth.module.css';
 
@@ -65,7 +67,9 @@ export function LoginForm() {
     defaultValues: { phone: '', password: '' },
   });
 
+  const lock = useActionLock();
   const onSubmit = form.handleSubmit(async (values) => {
+    if (!lock.acquire()) return; // двойное «Войти» — один запрос
     setError(null);
     try {
       const { data } = await api.post<S['AuthResponseDto']>('/auth/login', {
@@ -75,6 +79,7 @@ export function LoginForm() {
       afterAuth(data);
     } catch (e) {
       setError(getErrorMessage(e));
+      lock.release();
     }
   });
 
@@ -109,7 +114,19 @@ export function LoginForm() {
         <Button type="submit" size="xl" fullWidth loading={form.formState.isSubmitting}>
           Войти
         </Button>
-        <Text c="dimmed">Забыли пароль? Позвоните координатору — он поможет войти.</Text>
+        <Text c="dimmed">
+          Забыли пароль? Позвоните координатору
+          {SUPPORT_PHONE ? (
+            <>
+              {' '}
+              по номеру{' '}
+              <Anchor href={`tel:${SUPPORT_PHONE}`} fw={700}>
+                {formatPhone(SUPPORT_PHONE)}
+              </Anchor>
+            </>
+          ) : null}{' '}
+          — он поможет войти.
+        </Text>
         <Text>
           Нет аккаунта?{' '}
           <Anchor component={Link} href="/choose" fw={600}>
@@ -199,7 +216,9 @@ export function RegisterForm() {
   });
   const errors = form.formState.errors;
 
+  const lock = useActionLock();
   const onSubmit = form.handleSubmit(async (v) => {
+    if (!lock.acquire()) return;
     setError(null);
     const name = splitFullName(v.fullName)!;
     try {
@@ -214,6 +233,7 @@ export function RegisterForm() {
       afterAuth(data);
     } catch (e) {
       setError(getErrorMessage(e));
+      lock.release();
     }
   });
 
@@ -297,19 +317,36 @@ export function RegisterForm() {
           control={form.control}
           name="pdConsent"
           render={({ field }) => (
-            <Checkbox
-              checked={!!field.value}
-              onChange={(e) => field.onChange(e.currentTarget.checked)}
-              label={
-                <>
-                  Я согласен(на) на обработку персональных данных.{' '}
-                  <Anchor component={Link} href="/privacy" target="_blank">
-                    Читать политику
-                  </Anchor>
-                </>
-              }
-              error={errors.pdConsent?.message}
-            />
+            // Место под ошибку зарезервировано заранее: когда она появляется или исчезает,
+            // кнопка «Зарегистрироваться» не прыгает
+            <div>
+              <Checkbox
+                checked={!!field.value}
+                onChange={(e) => field.onChange(e.currentTarget.checked)}
+                aria-invalid={!!errors.pdConsent}
+                aria-describedby="consent-error"
+                label={
+                  <>
+                    Я согласен(на) на обработку персональных данных.{' '}
+                    <Anchor component={Link} href="/privacy" target="_blank">
+                      Читать политику
+                    </Anchor>
+                  </>
+                }
+              />
+              <Text
+                id="consent-error"
+                c="red.8"
+                size="sm"
+                fw={600}
+                mih="3.2em"
+                mt={4}
+                pl={36}
+                role={errors.pdConsent ? 'alert' : undefined}
+              >
+                {errors.pdConsent?.message ?? ''}
+              </Text>
+            </div>
           )}
         />
         {error && (

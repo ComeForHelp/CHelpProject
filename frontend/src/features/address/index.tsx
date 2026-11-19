@@ -20,7 +20,7 @@ import {
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconPencil, IconPlus, IconTrash } from '@tabler/icons-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -33,16 +33,39 @@ import {
 } from '@/entities/address';
 import { api } from '@/shared/api/client';
 import { getErrorMessage } from '@/shared/api/errors';
+import { useGuardedMutation } from '@/shared/api/use-guarded-mutation';
 import type { S } from '@/shared/api/types';
+import {
+  ADDRESS_MESSAGES,
+  APARTMENT_RE,
+  ENTRANCE_RE,
+  HOUSE_RE,
+  STREET_RE,
+} from '@/shared/lib/address';
 import { EmptyState, QueryState, confirmAction } from '@/shared/ui';
 
 const schema = z.object({
   label: z.string().trim().max(50).optional(),
   districtId: z.string().min(1, 'Выберите район'),
-  street: z.string().trim().min(1, 'Укажите улицу').max(200),
-  house: z.string().trim().min(1, 'Укажите дом').max(20),
-  entrance: z.string().trim().max(10).optional(),
-  apartment: z.string().trim().max(20).optional(),
+  street: z
+    .string()
+    .trim()
+    .min(1, 'Укажите улицу')
+    .max(200)
+    .regex(STREET_RE, ADDRESS_MESSAGES.street),
+  house: z.string().trim().min(1, 'Укажите дом').max(20).regex(HOUSE_RE, ADDRESS_MESSAGES.house),
+  entrance: z
+    .string()
+    .trim()
+    .max(10)
+    .refine((v) => !v || ENTRANCE_RE.test(v), ADDRESS_MESSAGES.entrance)
+    .optional(),
+  apartment: z
+    .string()
+    .trim()
+    .max(20)
+    .refine((v) => !v || APARTMENT_RE.test(v), ADDRESS_MESSAGES.apartment)
+    .optional(),
   floor: z.union([z.number().int().min(-5).max(100), z.literal('')]).optional(),
   hasElevator: z.boolean(),
   accessNotes: z.string().trim().max(1000).optional(),
@@ -146,9 +169,25 @@ export function AddressForm({
           error={errors.street?.message}
         />
         <SimpleGrid cols={{ base: 2, sm: 4 }}>
-          <TextInput label="Дом" {...form.register('house')} error={errors.house?.message} />
-          <TextInput label="Подъезд" {...form.register('entrance')} />
-          <TextInput label="Квартира" {...form.register('apartment')} />
+          <TextInput
+            label="Дом"
+            placeholder="45"
+            {...form.register('house')}
+            error={errors.house?.message}
+          />
+          <TextInput
+            label="Подъезд"
+            placeholder="2"
+            inputMode="numeric"
+            {...form.register('entrance')}
+            error={errors.entrance?.message}
+          />
+          <TextInput
+            label="Квартира"
+            placeholder="12"
+            {...form.register('apartment')}
+            error={errors.apartment?.message}
+          />
           <Controller
             control={form.control}
             name="floor"
@@ -252,7 +291,7 @@ export function AddressManager({ recipientId }: { recipientId?: string }) {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<Address | 'new' | null>(null);
 
-  const remove = useMutation({
+  const remove = useGuardedMutation({
     mutationFn: (id: string) => api.delete(`/addresses/${id}`),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: addressKeys.list(recipientId) });
@@ -269,8 +308,8 @@ export function AddressManager({ recipientId }: { recipientId?: string }) {
             <Stack gap="sm">
               {addresses.map((a) => (
                 <Paper key={a.id} withBorder p="md" radius="md">
-                  <Group justify="space-between" align="flex-start" wrap="nowrap">
-                    <Stack gap={4}>
+                  <Group justify="space-between" align="flex-start" wrap="nowrap" gap="xs">
+                    <Stack gap={4} style={{ minWidth: 0, flex: 1 }}>
                       <Group gap="xs">
                         {a.label && <Text fw={700}>{a.label}</Text>}
                         {a.isDefault && (
