@@ -10,6 +10,8 @@
   top: 0;
   z-index: 20;
   height: 4rem;
+  /* Подписи в шапке прячутся, когда им не хватает ширины (globals.css, .hide-in-narrow-header) */
+  container-type: inline-size;
   padding-top: env(safe-area-inset-top, 0px);
   background: #fff;
   border-bottom: 1px solid var(--mantine-color-ink-2);
@@ -28,7 +30,8 @@
 
 .shell {
   display: grid;
-  grid-template-columns: 248px minmax(0, 1fr);
+  /* Меню шире при крупном шрифте, чтобы подписи и переключатель шрифта не вылезали */
+  grid-template-columns: clamp(248px, 14rem, 320px) minmax(0, 1fr);
   min-height: calc(100vh - 4rem);
 }
 
@@ -111,6 +114,8 @@
     padding: 20px 16px calc(6.5rem + env(safe-area-inset-bottom, 0px));
   }
 
+  /* Все вкладки всегда помещаются в ширину экрана — без горизонтальной прокрутки,
+     при любом размере шрифта и масштабе браузера */
   .tabs {
     display: flex;
     position: fixed;
@@ -118,30 +123,32 @@
     right: 0;
     bottom: 0;
     z-index: 30;
-    gap: 4px;
-    overflow-x: auto;
-    padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+    gap: 2px;
+    padding: 4px 4px calc(4px + env(safe-area-inset-bottom, 0px));
     background: #fff;
     border-top: 1px solid var(--mantine-color-ink-2);
   }
 
   .tabLink {
     flex: 1 1 0;
-    min-width: 4.2rem;
+    min-width: 0;
     min-height: 3.6rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 2px;
-    padding: 4px;
+    padding: 4px 2px;
     border-radius: 10px;
     color: var(--mantine-color-ink-8);
     text-decoration: none;
-    font-size: 0.72rem;
+    /* Подпись зависит от ширины экрана, а не от выбранного размера шрифта: иначе 5 вкладок не влезут */
+    font-size: clamp(10px, 3vw, 0.8rem);
     font-weight: 500;
     line-height: 1.15;
     text-align: center;
+    hyphens: auto;
+    overflow-wrap: anywhere;
 
     &[data-active] {
       background: var(--mantine-color-brand-1);

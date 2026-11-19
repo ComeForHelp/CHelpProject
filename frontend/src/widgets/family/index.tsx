@@ -89,7 +89,7 @@ export function WardHeader({ recipientId }: { recipientId: string }) {
     { href: `${base}/history`, label: 'История', icon: <IconHistory size={20} aria-hidden /> },
     {
       href: `${base}/recurring`,
-      label: 'Регулярные',
+      label: 'Регуляр\u00ADные',
       icon: <IconCalendarRepeat size={20} aria-hidden />,
     },
     {

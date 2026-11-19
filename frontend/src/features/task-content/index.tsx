@@ -20,13 +20,24 @@ import {
   Textarea,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconCamera, IconFileTypePdf, IconSearch, IconSend, IconTrash } from '@tabler/icons-react';
+import {
+  IconCamera,
+  IconCheck,
+  IconFileTypePdf,
+  IconSearch,
+  IconSend,
+  IconTrash,
+  IconX,
+  IconZoomIn,
+  IconZoomOut,
+} from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useVolunteers } from '@/entities/volunteer';
-import { type TaskDetail, taskKeys, useTaskComments } from '@/entities/task';
+import { type TaskDetail, itemLabel, taskKeys, useTaskComments } from '@/entities/task';
 import { api } from '@/shared/api/client';
 import { getErrorMessage } from '@/shared/api/errors';
+import { useGuardedMutation } from '@/shared/api/use-guarded-mutation';
 import type { AttachmentKind, S } from '@/shared/api/types';
 import { ATTACHMENT_KIND, ROLE_LABEL } from '@/shared/config/dictionaries';
 import { formatDateTime } from '@/shared/lib/date';
@@ -36,14 +47,19 @@ import { EmptyState, LoadingBlock, confirmAction } from '@/shared/ui';
 
 // ───────────── Список покупок с отметками (ShoppingChecklist) ─────────────
 
+type ItemMark = 'BOUGHT' | 'UNAVAILABLE' | 'NONE';
+
+const markOf = (item: S['TaskItemDto']): ItemMark =>
+  item.isChecked ? 'BOUGHT' : item.isUnavailable ? 'UNAVAILABLE' : 'NONE';
+
 /**
- * Волонтёр отмечает купленное. Отметка меняется сразу в момент нажатия (локально),
- * затем уходит на сервер; при ошибке возвращается обратно. Получатель видит её при обновлении.
+ * Волонтёр отмечает у каждой позиции «Куплено» или «Нет в наличии» (повторное нажатие снимает отметку).
+ * Отметка меняется сразу в момент нажатия (локально), затем уходит на сервер; при ошибке возвращается.
  */
 export function ShoppingChecklist({ task }: { task: TaskDetail }) {
   const queryClient = useQueryClient();
   // Отметки, ещё не подтверждённые сервером: id позиции → новое значение
-  const [pending, setPending] = useState<Record<string, boolean>>({});
+  const [pending, setPending] = useState<Record<string, ItemMark>>({});
   const forget = (id: string) =>
     setPending((p) => {
       const next = { ...p };
@@ -51,9 +67,12 @@ export function ShoppingChecklist({ task }: { task: TaskDetail }) {
       return next;
     });
 
-  const toggle = useMutation({
-    mutationFn: ({ id, isChecked }: { id: string; isChecked: boolean }) =>
-      api.patch(`/tasks/${task.id}/items/${id}`, { isChecked } satisfies S['UpdateTaskItemDto']),
+  const save = useMutation({
+    mutationFn: ({ id, mark }: { id: string; mark: ItemMark }) =>
+      api.patch(`/tasks/${task.id}/items/${id}`, {
+        isChecked: mark === 'BOUGHT',
+        isUnavailable: mark === 'UNAVAILABLE',
+      } satisfies S['UpdateTaskItemDto']),
     onSuccess: async (_d, { id }) => {
       await queryClient.invalidateQueries({ queryKey: taskKeys.detail(task.id) });
       forget(id);
@@ -64,33 +83,58 @@ export function ShoppingChecklist({ task }: { task: TaskDetail }) {
     },
   });
 
-  const isChecked = (item: S['TaskItemDto']) => pending[item.id] ?? item.isChecked;
-  const done = task.items.filter(isChecked).length;
+  const markFor = (item: S['TaskItemDto']) => pending[item.id] ?? markOf(item);
+  const set = (item: S['TaskItemDto'], mark: ItemMark) => {
+    const next = markFor(item) === mark ? 'NONE' : mark;
+    setPending((p) => ({ ...p, [item.id]: next }));
+    save.mutate({ id: item.id, mark: next });
+  };
+  const bought = task.items.filter((i) => markFor(i) === 'BOUGHT').length;
+  const missing = task.items.filter((i) => markFor(i) === 'UNAVAILABLE').length;
+
   return (
     <Stack gap="sm">
       <Text c="dimmed">
-        Куплено {done} из {task.items.length}
+        Куплено {bought} из {task.items.length}
+        {missing ? ` · нет в наличии: ${missing}` : ''}
       </Text>
       {task.items.map((item) => {
-        const checked = isChecked(item);
+        const mark = markFor(item);
         return (
-          <Paper key={item.id} withBorder p="sm" radius="md" bg={checked ? 'green.0' : undefined}>
-            <Checkbox
-              size="lg"
-              checked={checked}
-              onChange={(e) => {
-                const value = e.currentTarget.checked;
-                setPending((p) => ({ ...p, [item.id]: value }));
-                toggle.mutate({ id: item.id, isChecked: value });
-              }}
-              label={
-                <Text size="lg" td={checked ? 'line-through' : undefined}>
-                  {item.name}
-                  {item.quantity ? ` — ${item.quantity}${item.unit ? ` ${item.unit}` : ''}` : ''}
-                  {item.note ? ` (${item.note})` : ''}
-                </Text>
-              }
-            />
+          <Paper
+            key={item.id}
+            withBorder
+            p="sm"
+            radius="md"
+            bg={mark === 'BOUGHT' ? 'green.0' : mark === 'UNAVAILABLE' ? 'red.0' : undefined}
+          >
+            <Stack gap="xs">
+              <Text size="lg" fw={600} td={mark === 'BOUGHT' ? 'line-through' : undefined}>
+                {itemLabel(item)}
+              </Text>
+              <Group gap="xs" grow role="group" aria-label={`Отметка: ${item.name}`}>
+                <Button
+                  size="md"
+                  variant={mark === 'BOUGHT' ? 'filled' : 'default'}
+                  color="green"
+                  leftSection={<IconCheck size={20} aria-hidden />}
+                  aria-pressed={mark === 'BOUGHT'}
+                  onClick={() => set(item, 'BOUGHT')}
+                >
+                  Куплено
+                </Button>
+                <Button
+                  size="md"
+                  variant={mark === 'UNAVAILABLE' ? 'filled' : 'default'}
+                  color="red"
+                  leftSection={<IconX size={20} aria-hidden />}
+                  aria-pressed={mark === 'UNAVAILABLE'}
+                  onClick={() => set(item, 'UNAVAILABLE')}
+                >
+                  Нет в наличии
+                </Button>
+              </Group>
+            </Stack>
           </Paper>
         );
       })}
@@ -134,7 +178,7 @@ function AttachmentThumb({
   const { url, isPending } = useAttachmentBlob(taskId, attachment.id);
   const [opened, setOpened] = useState(false);
   const queryClient = useQueryClient();
-  const remove = useMutation({
+  const remove = useGuardedMutation({
     mutationFn: () => api.delete(`/tasks/${taskId}/attachments/${attachment.id}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) }),
     onError: (e) => notifications.show({ color: 'red', message: getErrorMessage(e) }),
@@ -196,9 +240,55 @@ function AttachmentThumb({
         </Group>
       </Stack>
       <Modal opened={opened} onClose={() => setOpened(false)} size="xl" title={label}>
-        {url && <Image src={url} alt={label} />}
+        {url && <PhotoViewer url={url} alt={label} />}
       </Modal>
     </Paper>
+  );
+}
+
+/**
+ * Фото целиком помещается в окно — прокручивать не нужно.
+ * «Увеличить» показывает в натуральную величину (тогда фото можно двигать прокруткой).
+ */
+function PhotoViewer({ url, alt }: { url: string; alt: string }) {
+  const [zoomed, setZoomed] = useState(false);
+  return (
+    <Stack gap="sm">
+      <Button
+        variant="light"
+        size="md"
+        style={{ alignSelf: 'flex-start' }}
+        leftSection={zoomed ? <IconZoomOut aria-hidden /> : <IconZoomIn aria-hidden />}
+        onClick={() => setZoomed((z) => !z)}
+        aria-pressed={zoomed}
+      >
+        {zoomed ? 'Уменьшить' : 'Увеличить'}
+      </Button>
+      <div
+        style={{
+          overflow: zoomed ? 'auto' : 'hidden',
+          maxHeight: 'calc(100dvh - 15rem)',
+          textAlign: 'center',
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element -- blob: URL, оптимизация Next не нужна */}
+        <img
+          src={url}
+          alt={alt}
+          onClick={() => setZoomed((z) => !z)}
+          style={
+            zoomed
+              ? { maxWidth: 'none', cursor: 'zoom-out' }
+              : {
+                  maxWidth: '100%',
+                  maxHeight: 'calc(100dvh - 15rem)',
+                  objectFit: 'contain',
+                  cursor: 'zoom-in',
+                }
+          }
+        />
+      </div>
+    </Stack>
   );
 }
 
@@ -208,7 +298,7 @@ export function Attachments({ task, canUpload }: { task: TaskDetail; canUpload: 
   const queryClient = useQueryClient();
   const [kind, setKind] = useState<AttachmentKind>('RECEIPT');
   const closed = ['CONFIRMED', 'CANCELLED', 'EXPIRED'].includes(task.status);
-  const upload = useMutation({
+  const upload = useGuardedMutation({
     mutationFn: async (file: File) => {
       const form = new FormData();
       form.append('kind', kind);
@@ -281,7 +371,7 @@ export function TaskComments({ taskId }: { taskId: string }) {
   const userId = useSession((s) => s.user?.id);
   const queryClient = useQueryClient();
   const [text, setText] = useState('');
-  const send = useMutation({
+  const send = useGuardedMutation({
     mutationFn: () =>
       api.post(`/tasks/${taskId}/comments`, { text: text.trim() } satisfies S['CreateCommentDto']),
     onSuccess: () => {
@@ -366,7 +456,7 @@ export function AssignVolunteerModal({
     limit: 20,
   });
   const queryClient = useQueryClient();
-  const assign = useMutation({
+  const assign = useGuardedMutation({
     mutationFn: (volunteerId: string) =>
       api.post(`/tasks/${task.id}/assign`, { volunteerId } satisfies S['AssignVolunteerDto']),
     onSuccess: async () => {

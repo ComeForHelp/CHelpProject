@@ -1,0 +1,50 @@
+/* Панель версии для слабовидящих: вверху страницы, на всю ширину */
+.panel {
+  border-bottom: 3px solid currentColor;
+  background: #fff;
+  color: #000;
+}
+
+.inner {
+  max-width: 1248px;
+  margin: 0 auto;
+  padding: 12px 16px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  gap: 12px 24px;
+}
+
+.group {
+  min-width: 0;
+}
+
+.groupLabel {
+  margin-bottom: 4px;
+}
+
+.collapse {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 2.75rem;
+  padding: 0 10px;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+/* Строка над шапкой в обычном режиме — как на сайтах госорганов */
+.bar {
+  background: var(--mantine-color-ink-0);
+  border-bottom: 1px solid var(--mantine-color-ink-2);
+}
+
+.barInner {
+  max-width: 1248px;
+  margin: 0 auto;
+  padding: 0 8px;
+  display: flex;
+  justify-content: flex-end;
+}

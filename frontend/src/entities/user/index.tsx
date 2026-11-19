@@ -33,7 +33,10 @@ export function useVolunteerProfile() {
   });
 }
 
-/** RecipientContact: имя, телефон, особенности — показывается волонтёру только после взятия. */
+/**
+ * RecipientContact: имя, телефон, особенности — показывается волонтёру только после взятия
+ * и пока заявка у него в работе (после закрытия или отмены сервер их не присылает).
+ */
 export function RecipientContact({ recipient }: { recipient: S['TaskRecipientDto'] }) {
   return (
     <Stack gap="xs">
@@ -86,10 +89,17 @@ export function VolunteerContact({ volunteer }: { volunteer: S['TaskVolunteerDto
       ) : (
         <Text c="dimmed">Выполнено заявок: {volunteer.tasksDone ?? 0}</Text>
       )}
-      <Group gap="sm" wrap="wrap">
-        <PhoneLink phone={volunteer.phone} label="Позвонить волонтёру" />
-        <Text c="dimmed">{formatPhone(volunteer.phone)}</Text>
-      </Group>
+      {volunteer.phone ? (
+        <Group gap="sm" wrap="wrap">
+          <PhoneLink phone={volunteer.phone} label="Позвонить волонтёру" />
+          <Text c="dimmed">{formatPhone(volunteer.phone)}</Text>
+        </Group>
+      ) : (
+        <Text c="dimmed">
+          Заявка закрыта, поэтому телефон волонтёра больше не показывается. Если остались вопросы —
+          позвоните координатору.
+        </Text>
+      )}
     </Stack>
   );
 }

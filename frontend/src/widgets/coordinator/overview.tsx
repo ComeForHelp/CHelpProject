@@ -57,6 +57,7 @@ export function WeekChart() {
                 {counts[i] > 0 && (
                   <div
                     className={classes.weekBar}
+                    data-a11y-fill
                     style={{ height: `${(counts[i] / max) * 100}%` }}
                   />
                 )}

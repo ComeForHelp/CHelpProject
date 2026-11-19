@@ -3,7 +3,7 @@
 import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { api } from '@/shared/api/client';
 import type { Paginated, S, TaskStatus, Urgency } from '@/shared/api/types';
-import { POLL_INTERVAL_MS } from '@/shared/config/env';
+import { POLL_INTERVAL_MS, TASK_POLL_INTERVAL_MS } from '@/shared/config/env';
 
 export type TaskDetail = S['TaskDetailDto'];
 export type TaskCardData = S['TaskCardDto'];
@@ -67,7 +67,7 @@ export function useTask(id: string) {
   return useQuery({
     queryKey: taskKeys.detail(id),
     queryFn: async () => (await api.get<TaskDetail>(`/tasks/${id}`)).data,
-    refetchInterval: POLL_INTERVAL_MS,
+    refetchInterval: TASK_POLL_INTERVAL_MS,
   });
 }
 
@@ -85,7 +85,7 @@ export function useMyTasks(params: MyTasksParams) {
   });
 }
 
-/** Каталог с подгрузкой «Показать ещё»; обновляется сам раз в 30 с. */
+/** Каталог с подгрузкой «Показать ещё»; обновляется сам раз в 15 с. */
 export function useCatalog(filters: CatalogFilters) {
   return useInfiniteQuery({
     queryKey: taskKeys.catalog(filters),

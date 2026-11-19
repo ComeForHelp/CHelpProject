@@ -3,6 +3,8 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   // Сборка для Docker: в образ попадает только нужное для запуска.
   output: 'standalone',
+  // Вторая сборка рядом с запущенной (проверка, не трогая работающий стенд): NEXT_DIST_DIR=.next-check
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   reactStrictMode: true,
   poweredByHeader: false,
   experimental: {

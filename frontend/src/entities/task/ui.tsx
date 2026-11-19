@@ -1,7 +1,14 @@
 'use client';
 
-import { Alert, Badge, Checkbox, Group, List, Stack, Text, Timeline } from '@mantine/core';
-import { IconAlertTriangle, IconCheck, IconClock, IconUser } from '@tabler/icons-react';
+import { Alert, Badge, Group, List, Stack, Text, Timeline } from '@mantine/core';
+import {
+  IconAlertTriangle,
+  IconCheck,
+  IconCircleDashed,
+  IconClock,
+  IconUser,
+  IconX,
+} from '@tabler/icons-react';
 import type { S, TaskStatus } from '@/shared/api/types';
 import { ROLE_LABEL, TASK_STATUS } from '@/shared/config/dictionaries';
 import { formatDateTime, formatWindow } from '@/shared/lib/date';
@@ -38,7 +45,7 @@ export function TaskCard({
             )}
           </Stack>
         </Group>
-        <Stack gap={6} align="flex-end" style={{ flexShrink: 0 }}>
+        <Stack gap={6} align="flex-end" style={{ flexShrink: 1, minWidth: 0, maxWidth: '50%' }}>
           <StatusBadge status={task.status} size="md" />
           {task.urgency === 'URGENT' && (
             <Badge color="red" c="red.9" size="md">
@@ -144,26 +151,65 @@ export function TaskStatusTimeline({ task }: { task: TaskDetail }) {
   );
 }
 
-/** ShoppingListView — список покупок только для просмотра. */
-export function ShoppingListView({ items }: { items: S['TaskItemDto'][] }) {
+/** Подпись позиции: «Молоко — 2 шт (2,5%)». */
+export function itemLabel(item: S['TaskItemDto']): string {
+  return (
+    item.name +
+    (item.quantity ? ` — ${item.quantity}${item.unit ? ` ${item.unit}` : ''}` : '') +
+    (item.note ? ` (${item.note})` : '')
+  );
+}
+
+/** Состояние позиции словами и значком — не только цветом. */
+export function itemState(item: S['TaskItemDto']) {
+  if (item.isChecked) return { text: 'Куплено', color: 'green.8', Icon: IconCheck };
+  if (item.isUnavailable) return { text: 'Нет в наличии', color: 'red.8', Icon: IconX };
+  return { text: 'Ещё не куплено', color: 'ink.6', Icon: IconCircleDashed };
+}
+
+/**
+ * ShoppingListView — список покупок только для просмотра (получатель, родственник).
+ * Отметки ставит волонтёр, поэтому здесь не галочки, а состояние словами.
+ */
+export function ShoppingListView({
+  items,
+  showState = true,
+}: {
+  items: S['TaskItemDto'][];
+  showState?: boolean;
+}) {
   if (!items.length) return <Text c="dimmed">Список не задан</Text>;
   return (
-    <Stack gap={6}>
-      {items.map((item) => (
-        <Checkbox
-          key={item.id}
-          checked={item.isChecked}
-          readOnly
-          tabIndex={-1}
-          label={
-            <Text td={item.isChecked ? 'line-through' : undefined}>
-              {item.name}
-              {item.quantity ? ` — ${item.quantity}${item.unit ? ` ${item.unit}` : ''}` : ''}
-              {item.note ? ` (${item.note})` : ''}
+    <Stack gap={8}>
+      {showState && (
+        <Text c="dimmed" size="sm">
+          Отметки «куплено» и «нет в наличии» ставит волонтёр, когда покупает.
+        </Text>
+      )}
+      {items.map((item) => {
+        const state = itemState(item);
+        return (
+          <Group key={item.id} gap="sm" wrap="nowrap" align="flex-start">
+            {showState && (
+              <state.Icon
+                size={22}
+                aria-hidden
+                color={`var(--mantine-color-${state.color.replace('.', '-')})`}
+                style={{ flexShrink: 0, marginTop: 2 }}
+              />
+            )}
+            <Text style={{ minWidth: 0 }}>
+              {itemLabel(item)}
+              {showState && (
+                <Text span c={state.color} fw={600}>
+                  {' '}
+                  · {state.text}
+                </Text>
+              )}
             </Text>
-          }
-        />
-      ))}
+          </Group>
+        );
+      })}
     </Stack>
   );
 }

@@ -29,7 +29,7 @@ import { EmptyState, ErrorBlock, LoadingBlock, QueryState, StatusBadge } from '@
 const ALL = 'all';
 const MINE = 'mine';
 
-/** TaskFilters + TaskCatalog: только открытые заявки, срочные сверху, обновление раз в 30 с. */
+/** TaskFilters + TaskCatalog: только открытые заявки, срочные сверху, обновление раз в 15 с. */
 export function TaskCatalog() {
   const districts = useDistricts();
   const categories = useCategories();

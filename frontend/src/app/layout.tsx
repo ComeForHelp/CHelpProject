@@ -39,11 +39,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="ru" {...mantineHtmlProps} className={`${inter.variable} ${montserrat.variable}`}>
       <head>
         <ColorSchemeScript defaultColorScheme="light" />
-        {/* Размер шрифта — до отрисовки, чтобы страница не «прыгала» */}
+        {/* Размер шрифта и версия для слабовидящих — до отрисовки, чтобы страница не «прыгала» */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{var p=JSON.parse(localStorage.getItem('chp-ui')||'{}');var f=p.state&&p.state.fontSize;if(f)document.documentElement.style.fontSize=f+'px'}catch(e){}",
+              "try{var s=(JSON.parse(localStorage.getItem('chp-ui')||'{}').state)||{},h=document.documentElement,a=s.a11y;if(a&&a.enabled){h.setAttribute('data-a11y','');h.setAttribute('data-a11y-scheme',a.scheme||'bw');h.setAttribute('data-a11y-letter',a.letterSpacing||'normal');h.setAttribute('data-a11y-line',a.lineHeight||'normal');h.setAttribute('data-a11y-font',a.fontFamily||'sans');h.setAttribute('data-a11y-images',a.images||'on');h.style.fontSize=(a.fontSize||26)+'px'}else if(s.fontSize){h.style.fontSize=s.fontSize+'px'}}catch(e){}",
           }}
         />
       </head>

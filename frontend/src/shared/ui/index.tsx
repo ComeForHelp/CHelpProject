@@ -27,7 +27,13 @@ import { getErrorMessage } from '../api/errors';
 import type { TaskStatus } from '../api/types';
 import { TASK_STATUS, TONE, type Tone } from '../config/dictionaries';
 import { formatPhone } from '../lib/format';
-import { FONT_SIZES, type FontSize, useUiPrefs } from '../model/ui-prefs';
+import {
+  A11Y_FONT_SIZES,
+  type A11yFontSize,
+  FONT_SIZES,
+  type FontSize,
+  useUiPrefs,
+} from '../model/ui-prefs';
 import classes from './ui.module.css';
 
 /** Большая кнопка на всю ширину — главные действия («Нужна помощь», «Взять»). */
@@ -225,13 +231,21 @@ export function EmptyState({
 
 /** Переключатель размера шрифта: 18 / 20 / 22 px. */
 export function FontSizeSwitcher() {
-  const { fontSize, setFontSize } = useUiPrefs();
+  const { fontSize, setFontSize, a11y, setA11y } = useUiPrefs();
+  // В версии для слабовидящих тот же переключатель управляет её крупными размерами
+  const sizes: readonly number[] = a11y.enabled ? A11Y_FONT_SIZES : FONT_SIZES;
+  const current = a11y.enabled ? a11y.fontSize : fontSize;
   return (
     <SegmentedControl
       aria-label="Размер шрифта"
-      value={String(fontSize)}
-      onChange={(v) => setFontSize(Number(v) as FontSize)}
-      data={FONT_SIZES.map((size, i) => ({
+      fullWidth
+      value={String(current)}
+      onChange={(v) =>
+        a11y.enabled
+          ? setA11y({ fontSize: Number(v) as A11yFontSize })
+          : setFontSize(Number(v) as FontSize)
+      }
+      data={sizes.map((size, i) => ({
         value: String(size),
         label: (
           <span
@@ -364,3 +378,5 @@ export function Logo({ href = '/', light }: { href?: string; light?: boolean }) 
     </Link>
   );
 }
+
+export { A11yEffect, A11yPanel, A11yToggle } from './a11y';

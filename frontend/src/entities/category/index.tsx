@@ -53,3 +53,24 @@ export const CATEGORY_DEFAULT_TITLE: Record<string, string> = {
   delivery: 'Доставить',
   other: 'Помочь',
 };
+
+/** Подсказки в форме заявки — свои для каждой категории, а не «хлеб» везде. */
+export const CATEGORY_HINTS: Record<
+  string,
+  { description: string; item?: string; quantity?: string }
+> = {
+  groceries: {
+    description: 'Например: хлеб нарезанный, молоко 2,5%, можно заменить на похожее',
+    item: 'Хлеб бородинский',
+    quantity: '2 шт',
+  },
+  medicine: {
+    description: 'Например: рецепт у меня на руках, лучше в аптеке у дома',
+    item: 'Ибупрофен 200 мг',
+    quantity: '1 упак.',
+  },
+  utilities: { description: 'Например: квитанции за свет и воду лежат на тумбочке у двери' },
+  escort: { description: 'Например: хожу медленно, нужна помощь на лестнице' },
+  delivery: { description: 'Например: забрать посылку на почте и принести домой' },
+  other: { description: 'Опишите, что нужно сделать' },
+};

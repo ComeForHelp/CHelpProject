@@ -126,7 +126,9 @@ export function TaskDetails({ taskId, basePath }: { taskId: string; basePath: st
     <Stack gap="md">
       {isCatalog && (
         <Alert color="blue" c="blue.9" icon={<IconInfoCircle aria-hidden />}>
-          Полный адрес, телефон и особенности получателя откроются, когда вы возьмёте заявку.
+          Квартира, подъезд, код домофона, телефон и особенности получателя откроются, когда вы
+          возьмёте заявку. Этаж и лифт видны сразу — чтобы вы заранее решили, сможете ли донести
+          покупки.
         </Alert>
       )}
 
@@ -160,6 +162,13 @@ export function TaskDetails({ taskId, basePath }: { taskId: string; basePath: st
             </Text>
           )}
         </Section>
+      )}
+
+      {isVolunteer && task.contactsHidden && (
+        <Alert color="gray" c="gray.9" icon={<IconInfoCircle aria-hidden />}>
+          Заявка {task.status === 'CANCELLED' ? 'отменена' : 'закрыта'}, поэтому адрес и телефоны
+          получателя больше не показываются.
+        </Alert>
       )}
 
       {(isVolunteer || isStaff) && (

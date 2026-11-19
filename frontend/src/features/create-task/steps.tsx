@@ -15,11 +15,12 @@ import {
   TextInput,
   Textarea,
 } from '@mantine/core';
-import { IconPlus, IconTrash } from '@tabler/icons-react';
+import { IconInfoCircle, IconPlus, IconTrash } from '@tabler/icons-react';
 import { useState } from 'react';
 import { AddressView, useAddresses } from '@/entities/address';
 import {
   CATEGORY_DEFAULT_TITLE,
+  CATEGORY_HINTS,
   CategoryIcon,
   type Category,
   categoryHasList,
@@ -87,9 +88,16 @@ export function CategoryStep({
 export function ShoppingListEditor({
   items,
   onChange,
+  itemPlaceholder = 'Хлеб бородинский',
+  quantityPlaceholder = '2 шт',
+  error,
 }: {
   items: DraftItem[];
   onChange: (items: DraftItem[]) => void;
+  itemPlaceholder?: string;
+  quantityPlaceholder?: string;
+  /** Ошибка у первого поля: «добавьте хотя бы одну позицию» */
+  error?: string | null;
 }) {
   const set = (i: number, patch: Partial<DraftItem>) =>
     onChange(items.map((it, idx) => (idx === i ? { ...it, ...patch } : it)));
@@ -102,8 +110,9 @@ export function ShoppingListEditor({
             style={{ flex: 3 }}
             label={i === 0 ? 'Что купить' : undefined}
             aria-label={`Позиция ${i + 1}`}
-            placeholder={i === 0 ? 'Хлеб бородинский' : 'Ещё что-нибудь'}
+            placeholder={i === 0 ? itemPlaceholder : 'Ещё что-нибудь'}
             value={item.name}
+            error={i === 0 ? error : undefined}
             onChange={(e) => set(i, { name: e.currentTarget.value })}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
@@ -116,7 +125,7 @@ export function ShoppingListEditor({
             style={{ flex: 1, minWidth: '5.5rem' }}
             label={i === 0 ? 'Сколько' : undefined}
             aria-label={`Сколько: позиция ${i + 1}`}
-            placeholder="2 шт"
+            placeholder={quantityPlaceholder}
             value={item.quantity}
             onChange={(e) => set(i, { quantity: e.currentTarget.value })}
           />
@@ -152,6 +161,8 @@ export function ShoppingListEditor({
 
 export function DetailsStep({ draft, update, categories }: StepProps) {
   const category = categories.find((c) => c.id === draft.categoryId);
+  const hints = CATEGORY_HINTS[category?.code ?? ''] ?? CATEGORY_HINTS.other;
+  const isMedicine = category?.code === 'medicine';
   return (
     <Stack gap="lg">
       <TextInput
@@ -171,15 +182,25 @@ export function DetailsStep({ draft, update, categories }: StepProps) {
       {categoryHasList(category?.code) && (
         <Stack gap="xs">
           <Text fw={700} size="lg">
-            {category?.code === 'medicine' ? 'Список лекарств' : 'Список покупок'}
+            {isMedicine ? 'Список лекарств' : 'Список покупок'}
           </Text>
-          <ShoppingListEditor items={draft.items} onChange={(items) => update({ items })} />
+          <Text c="dimmed" size="sm">
+            {isMedicine
+              ? 'Хотя бы одно лекарство. Можно указать дозировку'
+              : 'Хотя бы одна покупка — волонтёр будет отмечать купленное'}
+          </Text>
+          <ShoppingListEditor
+            items={draft.items}
+            onChange={(items) => update({ items })}
+            itemPlaceholder={hints.item}
+            quantityPlaceholder={hints.quantity}
+          />
         </Stack>
       )}
       <Textarea
         label="Что ещё важно знать"
         description="Необязательно"
-        placeholder="Например: хлеб нарезанный, молоко 2,5%"
+        placeholder={hints.description}
         value={draft.description}
         onChange={(e) => update({ description: e.currentTarget.value })}
       />
@@ -355,6 +376,10 @@ const PAYMENTS: PaymentMethod[] = ['CASH_ON_DELIVERY', 'TRANSFER', 'PREPAID'];
 export function PaymentStep({ draft, update }: StepProps) {
   return (
     <Stack gap="lg">
+      <Alert color="blue" c="blue.9" icon={<IconInfoCircle aria-hidden />}>
+        Сайт не принимает и не переводит деньги. Вы рассчитываетесь с волонтёром напрямую — только
+        за сами покупки, по чеку. Помощь волонтёра бесплатная.
+      </Alert>
       <NumberInput
         label="Примерно сколько денег понадобится"
         description="Необязательно. Волонтёр будет знать, сколько взять с собой"

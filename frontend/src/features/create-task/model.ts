@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { categoryHasList } from '@/entities/category';
 import type { PaymentMethod, S } from '@/shared/api/types';
 import { type DayPart, isSlotAvailable, slotWindow } from '@/shared/lib/date';
 
@@ -24,6 +25,8 @@ export interface TaskDraft {
   addressId?: string;
   paymentMethod?: PaymentMethod;
   estimatedCost?: number | null;
+  /** Шаг открыт кнопкой «Изменить» из проверки — после него вернуться сразу к проверке */
+  returnToReview?: boolean;
 }
 
 export const emptyDraft = (): TaskDraft => ({
@@ -80,14 +83,24 @@ export function stepsFor(category?: S['CategoryDto']): StepId[] {
   return steps;
 }
 
-/** Проверка шага: текст ошибки или null. */
-export function validateStep(step: StepId, d: TaskDraft, now: Date = new Date()): string | null {
+/** Проверка шага: текст ошибки или null. category нужна, чтобы требовать список покупок. */
+export function validateStep(
+  step: StepId,
+  d: TaskDraft,
+  now: Date = new Date(),
+  category?: S['CategoryDto'],
+): string | null {
   switch (step) {
     case 'category':
       return d.categoryId ? null : 'Выберите, что нужно сделать';
     case 'details':
       if (!d.title.trim()) return 'Напишите коротко, что нужно сделать';
       if (d.title.trim().length > 200) return 'Слишком длинный заголовок';
+      if (categoryHasList(category?.code) && !d.items.some((i) => i.name.trim())) {
+        return category?.code === 'medicine'
+          ? 'Добавьте в список хотя бы одно лекарство'
+          : 'Добавьте в список хотя бы одну покупку';
+      }
       return null;
     case 'time':
       if (!d.ymd) return 'Выберите день';
@@ -101,6 +114,16 @@ export function validateStep(step: StepId, d: TaskDraft, now: Date = new Date())
     case 'review':
       return null;
   }
+}
+
+/** Первый незаполненный шаг (кроме проверки) или -1, если всё заполнено. */
+export function firstInvalidStep(
+  steps: StepId[],
+  d: TaskDraft,
+  category?: S['CategoryDto'],
+  now: Date = new Date(),
+): number {
+  return steps.findIndex((s) => s !== 'review' && validateStep(s, d, now, category) !== null);
 }
 
 /** Черновик → тело запроса POST /tasks. */

@@ -1684,12 +1684,12 @@ export interface components {
       relation: string | null;
     };
     TaskVolunteerDto: {
+      /** @description Для кнопки «Позвонить». null — заявка закрыта, получателю телефон больше не показываем */
+      phone: string | null;
       id: string;
       firstName: string;
       lastName: string;
       middleName: string | null;
-      /** @description Для кнопки «Позвонить» */
-      phone: string;
       ratingAvg: number | null;
       tasksDone: number | null;
       hasCar: boolean | null;
@@ -1735,6 +1735,8 @@ export interface components {
       note: string | null;
       /** @description Отметка «куплено» */
       isChecked: boolean;
+      /** @description Отметка «нет в наличии» */
+      isUnavailable: boolean;
       position: number;
       /** Format: date-time */
       createdAt: string;
@@ -1777,6 +1779,8 @@ export interface components {
       availableTransitions: components['schemas']['TaskStatus'][];
       /** @description Только CATALOG: можно нажать «Взять» */
       canTake?: boolean;
+      /** @description Контакты другой стороны скрыты: каталог или заявка уже закрыта/отменена (у волонтёра — адрес и телефоны получателя, у получателя — телефон волонтёра) */
+      contactsHidden: boolean;
       /** @description Телефоны родственников — назначенному волонтёру и координатору */
       relatives?: components['schemas']['TaskRelativeContactDto'][];
       volunteer?: components['schemas']['TaskVolunteerDto'] | null;
@@ -1972,6 +1976,8 @@ export interface components {
       position?: number;
       /** @description Отметка «куплено» (волонтёр может менять только её) */
       isChecked?: boolean;
+      /** @description Отметка «нет в наличии». true снимает «куплено», и наоборот */
+      isUnavailable?: boolean;
     };
     PreferredVolunteerDto: {
       id: string;

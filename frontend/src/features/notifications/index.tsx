@@ -70,7 +70,7 @@ export function NotificationsButton({ taskHref }: { taskHref: (taskId: string) =
           onClick={() => setOpened(true)}
           aria-label={count ? `Уведомления: ${count} новых` : 'Уведомления'}
         >
-          <Box component="span" visibleFrom="sm">
+          <Box component="span" className="hide-in-narrow-header">
             Уведомления
           </Box>
         </Button>

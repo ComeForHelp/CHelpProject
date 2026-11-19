@@ -49,6 +49,45 @@ a:not([class]) {
   }
 }
 
+/* Длинные слова (особенно при крупном шрифте) переносятся, а не растягивают страницу вбок */
+body {
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+h1,
+h2,
+h3,
+h4 {
+  overflow-wrap: anywhere;
+}
+/* Крупные заголовки на узком экране уменьшаются по ширине экрана, чтобы слово целиком помещалось в строку */
+html h1.mantine-Title-root {
+  font-size: min(var(--title-fz), 8.5vw) !important;
+}
+html h2.mantine-Title-root {
+  font-size: min(var(--title-fz), 7vw) !important;
+}
+
+/* Подписи в шапке (имя, «Уведомления») прячутся, когда шапке не хватает ширины.
+   em в @container считается от шрифта самой шапки — при крупном шрифте прячутся раньше. */
+@container (max-width: 52em) {
+  .hide-in-narrow-header {
+    display: none !important;
+  }
+}
+/* Разделы на главной (Как это работает, Кому помогаем…) — только в широкой шапке */
+@container (max-width: 62em) {
+  .hide-in-medium-header {
+    display: none !important;
+  }
+}
+/* Совсем узко (крупный шрифт на телефоне): у «Выйти» остаётся значок, подпись — для диктора */
+@container (max-width: 15em) {
+  .hide-in-tiny-header {
+    display: none !important;
+  }
+}
+
 /* Плашка тестового стенда (NEXT_PUBLIC_STAND_LABEL). Контраст #7A5000 на #FFF4DB — 6,4:1 */
 .stand-banner {
   background: #fff4db;
@@ -58,4 +97,242 @@ a:not([class]) {
   text-align: center;
   font-size: 0.9rem;
   font-weight: 600;
+}
+
+/*
+ * Длинная подпись кнопки переносится на вторую строку, а не обрезается
+ * («Подтвердить выполнение», «Назначить другого волонтёра» в узкой колонке, крупный шрифт).
+ * Высота кнопки — не меньше заданной размером, но растёт под текст.
+ */
+html .mantine-Button-root {
+  height: auto;
+  min-height: var(--button-height);
+  padding-block: 0.3em;
+}
+html .mantine-Button-label {
+  white-space: normal;
+  overflow: visible;
+  text-align: center;
+  line-height: 1.25;
+}
+html .mantine-Button-section {
+  flex-shrink: 0;
+}
+
+/* Переключатели (SegmentedControl) и вкладки не шире экрана: варианты переносятся на новую строку */
+html .mantine-SegmentedControl-root {
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+html .mantine-SegmentedControl-control {
+  flex: 1 1 auto;
+}
+html :is(.mantine-SegmentedControl-label, .mantine-Tabs-tab) {
+  white-space: normal;
+}
+html .mantine-Tabs-list {
+  flex-wrap: wrap;
+}
+
+/* Бейджи статусов тоже переносятся («Ждёт волонтёра» при крупном шрифте на узком экране) */
+html .mantine-Badge-root {
+  height: auto;
+  min-height: var(--badge-height);
+  max-width: 100%;
+  white-space: normal;
+  padding-block: 0.15em;
+}
+html .mantine-Badge-label {
+  white-space: normal;
+  overflow: visible;
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* ═══════════════ Версия для слабовидящих (ГОСТ Р 52872-2019) ═══════════════
+ * Включается кнопкой «Для слабовидящих» в шапке; атрибуты на <html> ставит A11yEffect
+ * (и встроенный скрипт в layout.tsx — до отрисовки). Все цвета страницы заменяются одной
+ * контрастной парой; выбранное (нажатые кнопки, активный пункт меню, отмеченные поля) —
+ * в обратных цветах. Контраст каждой схемы не ниже 7:1.
+ */
+html[data-a11y-scheme='bw'] {
+  --a11y-bg: #ffffff;
+  --a11y-fg: #000000;
+}
+html[data-a11y-scheme='wb'] {
+  --a11y-bg: #000000;
+  --a11y-fg: #ffffff;
+}
+html[data-a11y-scheme='blue'] {
+  --a11y-bg: #9dd1ff;
+  --a11y-fg: #063462;
+}
+html[data-a11y-scheme='beige'] {
+  --a11y-bg: #f7f3d6;
+  --a11y-fg: #4d4b43;
+}
+html[data-a11y-scheme='brown'] {
+  --a11y-bg: #3b2716;
+  --a11y-fg: #a9e44d;
+}
+
+html[data-a11y],
+html[data-a11y] *,
+html[data-a11y] *::before,
+html[data-a11y] *::after {
+  background-color: var(--a11y-bg) !important;
+  background-image: none !important;
+  color: var(--a11y-fg) !important;
+  border-color: var(--a11y-fg) !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+/* Рамка у всего, на что можно нажать, и у полей — видно, где кнопка */
+html[data-a11y] :is(button, a.mantine-Button-root, input, textarea, select) {
+  border-width: 2px !important;
+  border-style: solid !important;
+}
+html[data-a11y] a {
+  text-decoration: underline !important;
+}
+/* Крупный шрифт и широкие интервалы: длинное слово переносится, а не растягивает страницу */
+html[data-a11y] * {
+  overflow-wrap: anywhere;
+}
+
+/* Выбранное — в обратных цветах */
+html[data-a11y]
+  :is(
+    [aria-pressed='true'],
+    [aria-current='page'],
+    [data-active],
+    [data-checked],
+    [aria-selected='true'],
+    input:checked,
+    input:checked + .mantine-Switch-track,
+    .mantine-Button-root[data-variant='filled'],
+    .mantine-Progress-section,
+    [data-a11y-fill]
+  ),
+html[data-a11y]
+  :is(
+    [aria-pressed='true'],
+    [aria-current='page'],
+    [data-active],
+    [data-checked],
+    [aria-selected='true'],
+    .mantine-Button-root[data-variant='filled'],
+    [data-a11y-fill]
+  )
+  * {
+  background-color: var(--a11y-fg) !important;
+  color: var(--a11y-bg) !important;
+  border-color: var(--a11y-fg) !important;
+}
+/* Значки с заданным цветом (красный треугольник, оранжевый календарь) — тоже в цвет схемы */
+html[data-a11y] svg[stroke]:not([stroke='none']) {
+  stroke: currentColor !important;
+}
+html[data-a11y] svg [fill]:not([fill='none']) {
+  fill: currentColor !important;
+}
+html[data-a11y] :is(.mantine-Checkbox-icon, .mantine-Radio-icon) {
+  color: var(--a11y-bg) !important;
+  background-color: transparent !important;
+}
+html[data-a11y] .mantine-Switch-thumb {
+  background-color: var(--a11y-bg) !important;
+  border: 2px solid var(--a11y-fg) !important;
+}
+html[data-a11y] :is(:disabled, [data-disabled]) {
+  opacity: 0.6 !important;
+}
+
+/* Фокус — толстая рамка цвета текста */
+html[data-a11y] :focus-visible {
+  outline: 4px solid var(--a11y-fg) !important;
+  outline-offset: 2px !important;
+}
+
+/* Образцы цветов на панели — каждый в своих цветах */
+html[data-a11y] [data-a11y-swatch] {
+  font-weight: 800 !important;
+  min-width: 3rem;
+}
+html[data-a11y] [data-a11y-swatch='bw'],
+html[data-a11y] [data-a11y-swatch='bw'] * {
+  background-color: #fff !important;
+  color: #000 !important;
+  border-color: #000 !important;
+}
+html[data-a11y] [data-a11y-swatch='wb'],
+html[data-a11y] [data-a11y-swatch='wb'] * {
+  background-color: #000 !important;
+  color: #fff !important;
+  border-color: #fff !important;
+}
+html[data-a11y] [data-a11y-swatch='blue'],
+html[data-a11y] [data-a11y-swatch='blue'] * {
+  background-color: #9dd1ff !important;
+  color: #063462 !important;
+  border-color: #063462 !important;
+}
+html[data-a11y] [data-a11y-swatch='beige'],
+html[data-a11y] [data-a11y-swatch='beige'] * {
+  background-color: #f7f3d6 !important;
+  color: #4d4b43 !important;
+  border-color: #4d4b43 !important;
+}
+html[data-a11y] [data-a11y-swatch='brown'],
+html[data-a11y] [data-a11y-swatch='brown'] * {
+  background-color: #3b2716 !important;
+  color: #a9e44d !important;
+  border-color: #a9e44d !important;
+}
+/* Выбранная схема — толстая рамка снаружи */
+html[data-a11y] [data-a11y-swatch][aria-pressed='true'] {
+  outline: 4px solid var(--a11y-fg) !important;
+  outline-offset: 3px;
+}
+
+/* Шрифт: по умолчанию простой без засечек, по выбору — с засечками */
+html[data-a11y-font='sans'] *:not(svg, svg *) {
+  font-family: Arial, Verdana, 'Helvetica Neue', sans-serif !important;
+}
+html[data-a11y-font='serif'] *:not(svg, svg *) {
+  font-family: Georgia, 'Times New Roman', 'PT Serif', serif !important;
+}
+
+/* Интервал между буквами */
+html[data-a11y-letter='medium'] * {
+  letter-spacing: 0.06em !important;
+  word-spacing: 0.12em !important;
+}
+html[data-a11y-letter='large'] * {
+  letter-spacing: 0.12em !important;
+  word-spacing: 0.24em !important;
+}
+
+/* Интервал между строками */
+html[data-a11y-line='normal'] * {
+  line-height: 1.5 !important;
+}
+html[data-a11y-line='medium'] * {
+  line-height: 1.85 !important;
+}
+html[data-a11y-line='large'] * {
+  line-height: 2.2 !important;
+}
+
+/* Изображения: чёрно-белые или скрытые (значки на кнопках остаются — это часть подписи) */
+html[data-a11y-images='gray'] :is(img, picture, video) {
+  filter: grayscale(1) contrast(1.1) !important;
+}
+html[data-a11y-images='off'] :is(img, picture, video) {
+  display: none !important;
+}
+
+html[data-a11y] .stand-banner {
+  border-bottom: 2px solid var(--a11y-fg) !important;
 }

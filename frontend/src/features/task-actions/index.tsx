@@ -11,12 +11,13 @@ import {
   IconUserMinus,
   IconCircleCheck,
 } from '@tabler/icons-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { type TaskDetail, taskKeys } from '@/entities/task';
 import { api } from '@/shared/api/client';
 import { getErrorMessage } from '@/shared/api/errors';
+import { useGuardedMutation } from '@/shared/api/use-guarded-mutation';
 import type { S } from '@/shared/api/types';
 import {
   type DayPart,
@@ -35,7 +36,7 @@ function useTaskAction<T = void>(
   successMessage?: string,
 ) {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useGuardedMutation({
     mutationFn: run,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: taskKeys.all });

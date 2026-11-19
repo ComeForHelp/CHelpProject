@@ -18,7 +18,7 @@ import {
   Textarea,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -28,6 +28,7 @@ import { CATEGORY_DEFAULT_TITLE, categoryHasList, useCategories } from '@/entiti
 import { recurringKeys } from '@/entities/recurring';
 import { api } from '@/shared/api/client';
 import { getErrorMessage } from '@/shared/api/errors';
+import { useGuardedMutation } from '@/shared/api/use-guarded-mutation';
 import type { Frequency, PaymentMethod, S } from '@/shared/api/types';
 import { FREQUENCY, PAYMENT_METHOD, WEEKDAYS } from '@/shared/config/dictionaries';
 import { DAY_PARTS, type DayPart, todayYmd } from '@/shared/lib/date';
@@ -413,7 +414,7 @@ export function RecurringRuleForm({
 export function RecurringRuleControls({ rule }: { rule: Rule }) {
   const queryClient = useQueryClient();
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['recurring'] });
-  const toggle = useMutation({
+  const toggle = useGuardedMutation({
     mutationFn: (isActive: boolean) =>
       api.patch(`/recurring-rules/${rule.id}`, { isActive } satisfies S['UpdateRecurringRuleDto']),
     onSuccess: (_d, isActive) => {
@@ -425,7 +426,7 @@ export function RecurringRuleControls({ rule }: { rule: Rule }) {
     },
     onError: (e) => notifications.show({ color: 'red', message: getErrorMessage(e) }),
   });
-  const remove = useMutation({
+  const remove = useGuardedMutation({
     mutationFn: () => api.delete(`/recurring-rules/${rule.id}`),
     onSuccess: () => {
       void queryClient.removeQueries({ queryKey: recurringKeys.detail(rule.id) });
