@@ -73,6 +73,7 @@ docker compose exec backend npx prisma db seed     # районы, катего�
 пароли и секреты из `.env`, плашка «Тестовый стенд» сверху страниц.
 
 - Пошагово: [docs/deploy.md](docs/deploy.md)
+- Бесплатно с ноутбука, через туннель Cloudflare: [docs/testing-laptop.md](docs/testing-laptop.md) — `.\scripts\start-test.ps1`
 - Памятка для тестировщиков (входы, сценарии, как сообщить об ошибке): [docs/testing.md](docs/testing.md)
 
 ## Запуск backend без Docker
