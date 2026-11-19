@@ -154,11 +154,11 @@ export function UrgentQueue() {
   return (
     <Stack gap="xs">
       {items.map((t) => (
-        <Group key={t.id} justify="space-between" wrap="nowrap">
+        <Group key={t.id} justify="space-between" gap={4} wrap="wrap">
           <Anchor component={Link} href={`/coord/tasks/${t.id}`} fw={600}>
             {t.title} — {shortName(t.recipient)}
           </Anchor>
-          <Text c="dimmed" size="sm" style={{ flexShrink: 0 }}>
+          <Text c="dimmed" size="sm">
             {formatWindow(t.windowStart, t.windowEnd)} · {t.district.name}
           </Text>
         </Group>

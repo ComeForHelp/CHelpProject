@@ -64,9 +64,9 @@ export function CatalogTaskCard({ task, href }: { task: CatalogCard; href: strin
     <LinkCard href={href}>
       <Stack gap={6}>
         <Group justify="space-between" wrap="nowrap" align="flex-start">
-          <Group gap="sm" wrap="nowrap" align="flex-start">
+          <Group gap="sm" wrap="nowrap" align="flex-start" style={{ minWidth: 0 }}>
             <CategoryIcon code={task.category.code} size={30} />
-            <Text fw={700} size="lg">
+            <Text fw={700} size="lg" style={{ minWidth: 0 }}>
               {task.title}
             </Text>
           </Group>
