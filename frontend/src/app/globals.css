@@ -108,6 +108,16 @@ html .mantine-Button-root {
   height: auto;
   min-height: var(--button-height);
   padding-block: 0.3em;
+  /* Подпись — ровно по центру по вертикали, и в одну строку, и в две */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+html .mantine-Button-root[data-block] {
+  display: flex;
+}
+html .mantine-Button-inner {
+  height: auto;
 }
 html .mantine-Button-label {
   white-space: normal;
