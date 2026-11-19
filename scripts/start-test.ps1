@@ -48,11 +48,16 @@ foreach ($port in 3000, 3001) {
 $env:NEXT_PUBLIC_API_URL = '/api/v1'
 $env:NEXT_PUBLIC_STAND_LABEL = 'Тестовый стенд. Не вводите настоящие имена, телефоны и адреса — данные периодически удаляются.'
 $env:NEXT_TELEMETRY_DISABLED = '1'
+# Телефон координатора для «Забыли пароль?» (тестовый координатор)
+$env:NEXT_PUBLIC_SUPPORT_PHONE = '+79000000002'
 
 if (-not $NoBuild) {
   Step 'Сборка backend'
   Push-Location $backendDir
-  try { npm run build; if ($LASTEXITCODE) { throw 'Сборка backend не удалась' } } finally { Pop-Location }
+  try {
+    npx prisma generate | Out-Null
+    npm run build; if ($LASTEXITCODE) { throw 'Сборка backend не удалась' }
+  } finally { Pop-Location }
 
   Step 'Сборка frontend (3–5 минут)'
   Push-Location $frontendDir
@@ -62,6 +67,10 @@ if (-not $NoBuild) {
 
 $backend = $null; $frontend = $null
 try {
+  Step 'Обновление базы данных (новые миграции)'
+  Push-Location $backendDir
+  try { npx prisma migrate deploy; if ($LASTEXITCODE) { throw 'Не удалось применить миграции — запущен ли PostgreSQL?' } } finally { Pop-Location }
+
   Step 'Запуск backend'
   # Через туннель все посетители приходят с одного адреса — общий лимит запросов на время теста выключен
   $env:THROTTLE_ENABLED = 'false'
