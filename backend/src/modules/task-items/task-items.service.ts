@@ -13,6 +13,16 @@ import { CreateTaskItemDto, UpdateTaskItemDto } from './dto/task-items.dto';
 /** Пока волонтёр может ставить отметки «куплено». */
 const CHECKABLE_STATUSES: TaskStatus[] = [TaskStatus.ASSIGNED, TaskStatus.IN_PROGRESS];
 
+/** «Куплено» и «нет в наличии» взаимоисключающие: включение одной отметки снимает другую. */
+function markData(isChecked?: boolean, isUnavailable?: boolean) {
+  if (isChecked) return { isChecked: true, isUnavailable: false };
+  if (isUnavailable) return { isChecked: false, isUnavailable: true };
+  return {
+    ...(isChecked === false ? { isChecked: false } : {}),
+    ...(isUnavailable === false ? { isUnavailable: false } : {}),
+  };
+}
+
 @Injectable()
 export class TaskItemsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -40,20 +50,27 @@ export class TaskItemsService {
   async update(ctx: TaskAccessContext, itemId: string, dto: UpdateTaskItemDto) {
     await this.getItem(ctx, itemId);
     if (ctx.relation === 'VOLUNTEER') {
-      const { isChecked, ...rest } = dto;
+      const { isChecked, isUnavailable, ...rest } = dto;
       if (Object.values(rest).some((v) => v !== undefined)) {
         throw new ForbiddenException('Волонтёр может только отмечать купленное');
       }
       if (!CHECKABLE_STATUSES.includes(ctx.task.status)) {
         throw new ConflictException('Отмечать покупки можно только во время выполнения');
       }
-      return this.prisma.taskItem.update({ where: { id: itemId }, data: { isChecked } });
+      return this.prisma.taskItem.update({
+        where: { id: itemId },
+        data: markData(isChecked, isUnavailable),
+      });
     }
     // Получатель, родственник и координатор правят список до начала выполнения;
-    // отметки «куплено» координатор может поправить и позже.
-    const onlyCheck = Object.entries(dto).every(([k, v]) => k === 'isChecked' || v === undefined);
-    if (!(onlyCheck && ctx.relation === 'STAFF')) this.assertOwnerCanEdit(ctx);
-    return this.prisma.taskItem.update({ where: { id: itemId }, data: dto });
+    // отметки «куплено» и «нет в наличии» координатор может поправить и позже.
+    const { isChecked, isUnavailable, ...fields } = dto;
+    const onlyMarks = Object.values(fields).every((v) => v === undefined);
+    if (!(onlyMarks && ctx.relation === 'STAFF')) this.assertOwnerCanEdit(ctx);
+    return this.prisma.taskItem.update({
+      where: { id: itemId },
+      data: { ...fields, ...markData(isChecked, isUnavailable) },
+    });
   }
 
   async remove(ctx: TaskAccessContext, itemId: string): Promise<void> {

@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, TaskStatus } from '@prisma/client';
 import { TaskRelation } from '../../common/access/access.service';
 import { TaskActor, availableTransitions } from './task-status.machine';
 
@@ -66,6 +66,24 @@ export const taskDetailInclude = {
 
 export type TaskListRow = Prisma.TaskGetPayload<{ include: typeof taskListInclude }>;
 export type TaskDetailRow = Prisma.TaskGetPayload<{ include: typeof taskDetailInclude }>;
+
+/** Заявка закрыта: контакты сторон друг другу больше не нужны. */
+const CLOSED_STATUSES: TaskStatus[] = [
+  TaskStatus.CONFIRMED,
+  TaskStatus.CANCELLED,
+  TaskStatus.EXPIRED,
+];
+
+/**
+ * Видны ли контакты другой стороны. Координатор видит всегда.
+ * Волонтёр — пока заявка у него в работе; после закрытия или отмены адрес и телефоны
+ * снова скрываются, как в каталоге. Получатель перестаёт видеть телефон волонтёра после закрытия.
+ */
+export function contactsVisible(relation: TaskRelation, status: TaskStatus): boolean {
+  if (relation === 'STAFF') return true;
+  if (relation === 'CATALOG') return false;
+  return !CLOSED_STATUSES.includes(status);
+}
 
 export function relationToActor(relation: TaskRelation): TaskActor | null {
   return relation === 'CATALOG' ? null : relation;
@@ -141,29 +159,47 @@ export function presentTaskDetail(t: TaskDetailRow, relation: TaskRelation, extr
     })(),
   };
 
+  // Этаж и лифт видны сразу (волонтёр решает, донесёт ли), а квартира, подъезд
+  // и подсказки (там бывает код домофона) — только пока заявка у него в работе.
+  const shortAddress = {
+    district: t.address.district,
+    street: t.address.street,
+    floor: t.address.floor,
+    hasElevator: t.address.hasElevator,
+  };
+
   if (relation === 'CATALOG') {
     return {
       ...base,
-      // Этаж и лифт видны сразу, а квартира, подъезд и подсказки (там бывает код домофона) — после взятия.
-      address: {
-        district: t.address.district,
-        street: t.address.street,
-        floor: t.address.floor,
-        hasElevator: t.address.hasElevator,
-      },
+      address: shortAddress,
       recipient: { firstName: t.recipient.firstName },
       canTake: true,
+      contactsHidden: true,
     };
   }
 
+  const open = contactsVisible(relation, t.status);
   const isStaffOrVolunteer = relation === 'STAFF' || relation === 'VOLUNTEER';
-  const { recipientProfile, ...recipient } = t.recipient;
+  const { recipientProfile, ...recipientFull } = t.recipient;
+  // Закрытая заявка у волонтёра: остаются только имя и фамилия получателя
+  const hideRecipient = relation === 'VOLUNTEER' && !open;
+  const recipient = hideRecipient
+    ? {
+        id: recipientFull.id,
+        firstName: recipientFull.firstName,
+        lastName: recipientFull.lastName,
+      }
+    : {
+        ...recipientFull,
+        mobilityNotes: recipientProfile?.mobilityNotes ?? null,
+        contactPreference: recipientProfile?.contactPreference ?? null,
+      };
   const volunteer = t.volunteer && {
     id: t.volunteer.id,
     firstName: t.volunteer.firstName,
     lastName: t.volunteer.lastName,
     middleName: t.volunteer.middleName,
-    phone: t.volunteer.phone,
+    phone: relation === 'OWNER' && !open ? null : t.volunteer.phone,
     ratingAvg: t.volunteer.volunteerProfile?.ratingAvg ?? null,
     tasksDone: t.volunteer.volunteerProfile?.tasksDone ?? null,
     hasCar: t.volunteer.volunteerProfile?.hasCar ?? null,
@@ -171,13 +207,10 @@ export function presentTaskDetail(t: TaskDetailRow, relation: TaskRelation, extr
 
   return {
     ...base,
-    address: t.address,
-    recipient: {
-      ...recipient,
-      mobilityNotes: recipientProfile?.mobilityNotes ?? null,
-      contactPreference: recipientProfile?.contactPreference ?? null,
-    },
-    relatives: isStaffOrVolunteer ? (extras.relatives ?? []) : undefined,
+    address: hideRecipient ? shortAddress : t.address,
+    recipient,
+    relatives: isStaffOrVolunteer && !hideRecipient ? (extras.relatives ?? []) : undefined,
+    contactsHidden: !open,
     volunteer,
     createdBy: t.createdBy,
     recurringRule: t.recurringRule,

@@ -300,15 +300,17 @@ model Task {
 }
 
 model TaskItem {
-  id        String   @id @default(uuid()) @db.Uuid
-  taskId    String   @map("task_id") @db.Uuid
-  name      String   @db.VarChar(200)
-  quantity  String?  @db.VarChar(50)
-  unit      String?  @db.VarChar(20)
-  note      String?  @db.VarChar(300)
-  isChecked Boolean  @default(false) @map("is_checked")
-  position  Int      @default(0)
-  createdAt DateTime @default(now()) @map("created_at")
+  id            String   @id @default(uuid()) @db.Uuid
+  taskId        String   @map("task_id") @db.Uuid
+  name          String   @db.VarChar(200)
+  quantity      String?  @db.VarChar(50)
+  unit          String?  @db.VarChar(20)
+  note          String?  @db.VarChar(300)
+  isChecked     Boolean  @default(false) @map("is_checked")
+  /// Волонтёр отметил «нет в наличии» (взаимоисключающе с isChecked)
+  isUnavailable Boolean  @default(false) @map("is_unavailable")
+  position      Int      @default(0)
+  createdAt     DateTime @default(now()) @map("created_at")
 
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
