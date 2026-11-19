@@ -10,7 +10,9 @@
 
 param([switch]$NoBuild, [switch]$NoTunnel)
 
-$ErrorActionPreference = 'Stop'
+# Не 'Stop': npx и prisma пишут предупреждения в stderr, а PowerShell 5.1 считает их ошибками.
+# Настоящие ошибки ловим по коду возврата ($LASTEXITCODE) и throw.
+$ErrorActionPreference = 'Continue'
 $root = Split-Path $PSScriptRoot -Parent
 $backendDir = Join-Path $root 'backend'
 $frontendDir = Join-Path $root 'frontend'
