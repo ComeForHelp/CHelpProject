@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 296" role="img" aria-label="Амурчик — тигрёнок-волонтёр с пакетом продуктов машет рукой">
+  <defs>
+    <clipPath id="body"><ellipse cx="120" cy="204" rx="52" ry="50"/></clipPath>
+  </defs>
+  <ellipse cx="122" cy="286" rx="82" ry="7" fill="#000" opacity=".1"/>
+  <!-- хвост -->
+  <path d="M76 236c-36 6-50-20-40-48" fill="none" stroke="#F08A24" stroke-width="15" stroke-linecap="round"/>
+  <path d="M76 236c-36 6-50-20-40-48" fill="none" stroke="#3A2418" stroke-width="15" stroke-dasharray="6 13" stroke-dashoffset="-10"/>
+  <!-- ноги -->
+  <rect x="88" y="230" width="28" height="44" rx="13" fill="#F08A24"/>
+  <rect x="124" y="230" width="28" height="44" rx="13" fill="#F08A24"/>
+  <path d="M90 248h12M138 248h12" stroke="#3A2418" stroke-width="5" stroke-linecap="round"/>
+  <ellipse cx="100" cy="274" rx="18" ry="9" fill="#FFF4E6"/>
+  <ellipse cx="140" cy="274" rx="18" ry="9" fill="#FFF4E6"/>
+  <!-- туловище и жилет волонтёра -->
+  <ellipse cx="120" cy="204" rx="52" ry="50" fill="#F08A24"/>
+  <g clip-path="url(#body)">
+    <ellipse cx="120" cy="214" rx="30" ry="38" fill="#FFF4E6"/>
+    <path d="M60 150h50v110H60zM130 150h50v110h-50z" fill="#1D5F99"/>
+    <path d="M110 160v100M130 160v100" stroke="#fff" stroke-width="3" opacity=".5"/>
+  </g>
+  <circle cx="88" cy="200" r="11" fill="#fff"/>
+  <path d="M88 207s-6-3.6-6-7.8a3.3 3.3 0 0 1 6-1.8 3.3 3.3 0 0 1 6 1.8c0 4.2-6 7.8-6 7.8z" fill="#E86200"/>
+  <!-- рука с пакетом -->
+  <path d="M164 182q14 18 18 40" fill="none" stroke="#1D5F99" stroke-width="22" stroke-linecap="round"/>
+  <path d="M176 206q4 8 6 16" fill="none" stroke="#F08A24" stroke-width="20" stroke-linecap="round"/>
+  <path d="M168 206l-8-36" stroke="#E9C27A" stroke-width="10" stroke-linecap="round"/>
+  <path d="M168 206l-8-36" stroke="#C99545" stroke-width="10" stroke-linecap="round" stroke-dasharray="2 9"/>
+  <ellipse cx="204" cy="222" rx="7" ry="14" fill="#4CAF50" transform="rotate(20 204 222)"/>
+  <ellipse cx="196" cy="220" rx="6" ry="13" fill="#3E9443" transform="rotate(-8 196 220)"/>
+  <path d="M168 238q14-22 30 0" fill="none" stroke="#7A4A1E" stroke-width="3.5"/>
+  <path d="M158 236h52l-4 46h-44z" fill="#D9A066"/>
+  <path d="M158 236h52v8h-52z" fill="#C48A4F"/>
+  <path d="M184 270s-9-5.4-9-11.7a5 5 0 0 1 9-2.7 5 5 0 0 1 9 2.7c0 6.3-9 11.7-9 11.7z" fill="#fff"/>
+  <circle cx="184" cy="228" r="11" fill="#FFF4E6"/>
+  <!-- машущая рука -->
+  <path d="M80 182q-24-14-32-46" fill="none" stroke="#1D5F99" stroke-width="22" stroke-linecap="round"/>
+  <path d="M60 165q-9-12-12-29" fill="none" stroke="#F08A24" stroke-width="20" stroke-linecap="round"/>
+  <circle cx="47" cy="130" r="14" fill="#FFF4E6"/>
+  <path d="M24 118q-6 10 0 22M14 112q-9 16 0 34" fill="none" stroke="#E86200" stroke-width="4" stroke-linecap="round"/>
+  <!-- голова -->
+  <circle cx="68" cy="48" r="22" fill="#F08A24"/>
+  <circle cx="172" cy="48" r="22" fill="#F08A24"/>
+  <circle cx="69" cy="50" r="11" fill="#FFF4E6"/>
+  <circle cx="171" cy="50" r="11" fill="#FFF4E6"/>
+  <ellipse cx="120" cy="98" rx="72" ry="63" fill="#F08A24"/>
+  <path d="M108 36l12 26 12-26zM86 44l14 18 2-24zM154 44l-14 18-2-24z" fill="#3A2418"/>
+  <path d="M48 84l24 7-24 6zM50 108l20 3-18 8zM192 84l-24 7 24 6zM190 108l-20 3 18 8z" fill="#3A2418"/>
+  <ellipse cx="100" cy="124" rx="26" ry="20" fill="#FFF4E6"/>
+  <ellipse cx="140" cy="124" rx="26" ry="20" fill="#FFF4E6"/>
+  <ellipse cx="120" cy="138" rx="18" ry="14" fill="#FFF4E6"/>
+  <ellipse cx="80" cy="116" rx="9" ry="6" fill="#F26D7D" opacity=".45"/>
+  <ellipse cx="160" cy="116" rx="9" ry="6" fill="#F26D7D" opacity=".45"/>
+  <circle cx="95" cy="94" r="10" fill="#2A1A10"/>
+  <circle cx="145" cy="94" r="10" fill="#2A1A10"/>
+  <circle cx="92" cy="90" r="3.5" fill="#fff"/>
+  <circle cx="142" cy="90" r="3.5" fill="#fff"/>
+  <path d="M111 108h18q0 9-9 12-9-3-9-12z" fill="#D9566B"/>
+  <path d="M120 120v5q-1 8-11 8M120 125q1 8 11 8" fill="none" stroke="#2A1A10" stroke-width="3" stroke-linecap="round"/>
+</svg>

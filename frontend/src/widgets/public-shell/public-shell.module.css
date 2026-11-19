@@ -56,6 +56,34 @@
   padding: 72px 0;
 }
 
+/* Справа в первом экране: маскот рядом с примером заявки, на узком экране — над ней */
+.heroAside {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  min-width: 0;
+}
+.heroAside > :last-child {
+  flex: 1;
+  min-width: 0;
+}
+.heroMascot {
+  width: clamp(120px, 14vw, 190px);
+  margin-bottom: -8px;
+}
+@media (max-width: 40em) {
+  .heroAside {
+    flex-direction: column;
+    align-items: center;
+  }
+  .heroAside > :last-child {
+    width: 100%;
+  }
+  .heroMascot {
+    width: 120px;
+  }
+}
+
 .alt {
   background: var(--mantine-color-ink-0);
 }

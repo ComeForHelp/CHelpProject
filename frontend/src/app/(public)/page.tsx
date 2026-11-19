@@ -12,7 +12,7 @@ import {
   IconWalk,
 } from '@tabler/icons-react';
 import Link from 'next/link';
-import { Pill } from '@/shared/ui';
+import { Mascot, Pill } from '@/shared/ui';
 import { publicClasses as c } from '@/widgets/public-shell';
 
 const STEPS = [
@@ -109,30 +109,33 @@ export default function HomePage() {
               </Text>
             </Stack>
 
-            {/* Пример заявки — как это выглядит для получателя */}
-            <Box className={c.card} h="auto" aria-label="Пример заявки">
-              <Group justify="space-between" mb="sm" wrap="nowrap">
-                <Text fw={700}>Заявка № 1042</Text>
-                <Pill tone="info" size="md">
-                  Волонтёр найден
-                </Pill>
-              </Group>
-              <Text c="dimmed" mb="md">
-                Купить хлеб, молоко и творог в магазине рядом с домом.
-              </Text>
-              <Stack gap="sm">
-                {['Заявка создана', 'Волонтёр откликнулся', 'Выполнение и подтверждение'].map(
-                  (t, i) => (
-                    <Group key={t} gap="sm" wrap="nowrap">
-                      <span className={c.step} data-done={i < 2 || undefined}>
-                        {i < 2 ? '✓' : i + 1}
-                      </span>
-                      <Text>{t}</Text>
-                    </Group>
-                  ),
-                )}
-              </Stack>
-            </Box>
+            {/* Маскот и пример заявки — как это выглядит для получателя */}
+            <div className={c.heroAside}>
+              <Mascot size={190} className={c.heroMascot} />
+              <Box className={c.card} h="auto" aria-label="Пример заявки">
+                <Group justify="space-between" mb="sm" wrap="nowrap">
+                  <Text fw={700}>Заявка № 1042</Text>
+                  <Pill tone="info" size="md">
+                    Волонтёр найден
+                  </Pill>
+                </Group>
+                <Text c="dimmed" mb="md">
+                  Купить хлеб, молоко и творог в магазине рядом с домом.
+                </Text>
+                <Stack gap="sm">
+                  {['Заявка создана', 'Волонтёр откликнулся', 'Выполнение и подтверждение'].map(
+                    (t, i) => (
+                      <Group key={t} gap="sm" wrap="nowrap">
+                        <span className={c.step} data-done={i < 2 || undefined}>
+                          {i < 2 ? '✓' : i + 1}
+                        </span>
+                        <Text>{t}</Text>
+                      </Group>
+                    ),
+                  )}
+                </Stack>
+              </Box>
+            </div>
           </SimpleGrid>
         </Container>
       </Box>

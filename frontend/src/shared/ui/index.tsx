@@ -20,7 +20,7 @@ import {
   VisuallyHidden,
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
-import { IconAlertTriangle, IconHeartFilled, IconInbox, IconPhone } from '@tabler/icons-react';
+import { IconAlertTriangle, IconPhone } from '@tabler/icons-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { getErrorMessage } from '../api/errors';
@@ -214,7 +214,7 @@ export function EmptyState({
   return (
     <Paper withBorder p="xl" radius="md">
       <Stack align="center" gap="sm">
-        <IconInbox size={44} aria-hidden color="var(--mantine-color-gray-6)" />
+        <Mascot size={96} />
         <Text fw={700} size="lg" ta="center">
           {title}
         </Text>
@@ -359,7 +359,46 @@ export function InfoRow({ label, children }: { label: string; children: ReactNod
   );
 }
 
-/** Логотип макета: оранжевый квадрат с сердцем и название. */
+/** Знак логотипа: сердце, которое «спешит» (линии движения слева). Цвет — currentColor. */
+function LogoGlyph() {
+  return (
+    <svg viewBox="0 0 64 64" width="30" height="30" aria-hidden focusable="false">
+      <path
+        d="M9 25h9M6 34h11M10 43h8"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="4.5"
+        strokeLinecap="round"
+      />
+      <path
+        transform="rotate(-10 38 34)"
+        d="M38 52S21 42.3 21 30.2a9.2 9.2 0 0 1 17-4.9 9.2 9.2 0 0 1 17 4.9C55 42.3 38 52 38 52z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+/**
+ * Маскот «Амурчик» — тигрёнок-волонтёр (амурский тигр — символ Приморья).
+ * Картинка, а не встроенный SVG: в режиме для слабовидящих она, как и другие изображения,
+ * становится чёрно-белой или скрывается по настройке, а не перекрашивается в один цвет.
+ */
+export function Mascot({ size = 160, className }: { size?: number; className?: string }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- статичный SVG, оптимизация не нужна
+    <img
+      src="/brand/mascot.svg"
+      alt=""
+      width={size}
+      height={Math.round((size * 296) / 240)}
+      className={className}
+      style={{ flex: 'none', maxWidth: '100%', height: 'auto' }}
+    />
+  );
+}
+
+/** Логотип: оранжевый квадрат со «спешащим» сердцем и название. */
 export function Logo({ href = '/', light }: { href?: string; light?: boolean }) {
   return (
     <Link
@@ -369,7 +408,7 @@ export function Logo({ href = '/', light }: { href?: string; light?: boolean }) 
       aria-label="Иду на помощь! — на главную"
     >
       <span className={classes.logoMark} aria-hidden>
-        <IconHeartFilled size={20} />
+        <LogoGlyph />
       </span>
       {/* На узком телефоне остаётся только знак — иначе шапка шире экрана */}
       <span className={classes.logoText} aria-hidden>
